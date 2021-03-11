@@ -1,5 +1,6 @@
 package com.holzhausen.mediastore.adapters;
 
+import android.graphics.Bitmap;
 import android.graphics.drawable.Drawable;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -20,12 +21,14 @@ import java.util.AbstractMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Observable;
+import java.util.Observer;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-public class MediaItemAdapter extends RecyclerView.Adapter<MediaItemAdapter.ViewHolder>{
+public class MediaItemAdapter extends RecyclerView.Adapter<MediaItemAdapter.ViewHolder> implements Observer {
 
-    private final List<MultimediaItem> multimediaItems;
+    private List<MultimediaItem> multimediaItems;
 
     private static final Map<MultimediaType, Integer> IMAGE_TYPE_ICONS = Stream.of(
             new AbstractMap.SimpleImmutableEntry<>(
@@ -53,15 +56,9 @@ public class MediaItemAdapter extends RecyclerView.Adapter<MediaItemAdapter.View
 
     @Override
     public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
-        try {
-            final Drawable image = Drawable.createFromStream(
-                    holder.itemView
-                            .getContext()
-                            .getAssets()
-                            .open(multimediaItems.get(position).getFileName()), null);
-            holder.getPreview().setImageDrawable(image);
-        } catch (IOException e) {
-            e.printStackTrace();
+        final Bitmap preview = multimediaItems.get(position).getPreview();
+        if(preview != null) {
+            holder.getPreview().setImageBitmap(preview);
         }
         holder
                 .getMultimediaTypeIcon()
@@ -83,6 +80,12 @@ public class MediaItemAdapter extends RecyclerView.Adapter<MediaItemAdapter.View
     @Override
     public int getItemCount() {
         return multimediaItems.size();
+    }
+
+    @SuppressWarnings("unchecked")
+    @Override
+    public void update(Observable o, Object multimediaItems) {
+        this.multimediaItems = (List<MultimediaItem>) multimediaItems;
     }
 
 

@@ -1,5 +1,7 @@
 package com.holzhausen.mediastore.model;
 
+import android.graphics.Bitmap;
+
 import java.util.Date;
 
 public class MultimediaItem {
@@ -11,6 +13,8 @@ public class MultimediaItem {
     private final MultimediaType multimediaType;
 
     private final boolean isLiked;
+
+    private Bitmap preview;
 
     public MultimediaItem(String fileName, MultimediaType multimediaType, boolean isLiked) {
         this.fileName = fileName;
@@ -33,5 +37,13 @@ public class MultimediaItem {
 
     public boolean isLiked() {
         return isLiked;
+    }
+
+    public Bitmap getPreview() {
+        return preview;
+    }
+
+    public void setPreview(Bitmap preview) {
+        this.preview = preview;
     }
 }
