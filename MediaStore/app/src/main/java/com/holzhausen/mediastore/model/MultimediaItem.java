@@ -6,25 +6,21 @@ public class MultimediaItem {
 
     private final String fileName;
 
-    private final String fileLocation;
-
     private final Date creationDate;
 
     private final MultimediaType multimediaType;
 
-    public MultimediaItem(String fileName, String fileLocation, MultimediaType multimediaType) {
+    private final boolean isLiked;
+
+    public MultimediaItem(String fileName, MultimediaType multimediaType, boolean isLiked) {
         this.fileName = fileName;
-        this.fileLocation = fileLocation;
         this.multimediaType = multimediaType;
         this.creationDate = new Date();
+        this.isLiked = isLiked;
     }
 
     public String getFileName() {
         return fileName;
-    }
-
-    public String getFileLocation() {
-        return fileLocation;
     }
 
     public Date getCreationDate() {
@@ -33,5 +29,9 @@ public class MultimediaItem {
 
     public MultimediaType getMultimediaType() {
         return multimediaType;
+    }
+
+    public boolean isLiked() {
+        return isLiked;
     }
 }
