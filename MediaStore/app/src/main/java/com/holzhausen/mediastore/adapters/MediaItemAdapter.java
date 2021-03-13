@@ -11,24 +11,44 @@ import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.google.android.material.snackbar.Snackbar;
 import com.holzhausen.mediastore.R;
+import com.holzhausen.mediastore.callbacks.DeleteItemSnackBarCallback;
+import com.holzhausen.mediastore.databases.IDBHelper;
 import com.holzhausen.mediastore.model.MultimediaItem;
 import com.holzhausen.mediastore.model.MultimediaType;
+import com.holzhausen.mediastore.util.IAdapterHelper;
 
 import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.AbstractMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Observable;
 import java.util.Observer;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-public class MediaItemAdapter extends RecyclerView.Adapter<MediaItemAdapter.ViewHolder> implements Observer {
+import io.reactivex.Flowable;
+import io.reactivex.android.schedulers.AndroidSchedulers;
+import io.reactivex.disposables.Disposable;
+
+public class MediaItemAdapter extends RecyclerView.Adapter<MediaItemAdapter.ViewHolder> {
 
     private List<MultimediaItem> multimediaItems;
+
+    private final Disposable disposable;
+
+    private final IAdapterHelper<MultimediaItem> helper;
+
+    private MultimediaItem deletedItem;
+
+    private int deletedItemPosition;
+
+
 
     private static final Map<MultimediaType, Integer> IMAGE_TYPE_ICONS = Stream.of(
             new AbstractMap.SimpleImmutableEntry<>(
@@ -42,8 +62,16 @@ public class MediaItemAdapter extends RecyclerView.Adapter<MediaItemAdapter.View
             )
     ).collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
 
-    public MediaItemAdapter(List<MultimediaItem> multimediaItems) {
-        this.multimediaItems = multimediaItems;
+    public MediaItemAdapter(Flowable<List<MultimediaItem>> multimediaItems,
+                            final IAdapterHelper<MultimediaItem> helper) {
+        this.multimediaItems = new LinkedList<>();
+        disposable = multimediaItems
+                .subscribeOn(AndroidSchedulers.mainThread())
+                .subscribe(items -> {
+            this.multimediaItems = items;
+            notifyDataSetChanged();
+        });
+        this.helper = helper;
     }
 
     @NonNull
@@ -56,7 +84,7 @@ public class MediaItemAdapter extends RecyclerView.Adapter<MediaItemAdapter.View
 
     @Override
     public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
-        final Bitmap preview = multimediaItems.get(position).getPreview();
+        final Bitmap preview = helper.readBitmapFromFile(multimediaItems.get(position).getFileName());
         if(preview != null) {
             holder.getPreview().setImageBitmap(preview);
         }
@@ -82,12 +110,36 @@ public class MediaItemAdapter extends RecyclerView.Adapter<MediaItemAdapter.View
         return multimediaItems.size();
     }
 
-    @SuppressWarnings("unchecked")
     @Override
-    public void update(Observable o, Object multimediaItems) {
-        this.multimediaItems = (List<MultimediaItem>) multimediaItems;
+    public void onDetachedFromRecyclerView(@NonNull RecyclerView recyclerView) {
+        super.onDetachedFromRecyclerView(recyclerView);
+        if(deletedItem != null) {
+            helper.removeItem(deletedItem);
+        }
+        disposable.dispose();
     }
 
+    public void removeItem(int position){
+        deletedItemPosition = position;
+        deletedItem = multimediaItems.get(position);
+        showUndoSnackBar();
+    }
+
+    public void setDeletedItemToNull(){
+        deletedItem = null;
+    }
+
+    private void showUndoSnackBar(){
+        final Snackbar snackbar = Snackbar
+                .make(helper.getView(R.id.main_activity_layout),
+                "Undo deleting item?", Snackbar.LENGTH_LONG);
+        snackbar.setAction("UNDO", view -> {
+            multimediaItems.add(deletedItemPosition, deletedItem);
+            notifyItemInserted(deletedItemPosition);
+        });
+        snackbar.addCallback(new DeleteItemSnackBarCallback(helper, deletedItem));
+        snackbar.show();
+    }
 
     public static class ViewHolder extends RecyclerView.ViewHolder {
 
