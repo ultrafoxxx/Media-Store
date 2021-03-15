@@ -8,4 +8,6 @@ public interface IDBHelper<T> {
 
     void removeItem(T item);
 
+    void updateItem(T item);
+
 }

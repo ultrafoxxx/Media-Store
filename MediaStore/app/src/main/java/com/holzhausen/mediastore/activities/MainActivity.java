@@ -9,8 +9,10 @@ import androidx.recyclerview.widget.RecyclerView;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.net.Uri;
 import android.os.Bundle;
 import android.provider.MediaStore;
+import android.util.Log;
 import android.view.View;
 import android.widget.Toast;
 
@@ -26,6 +28,7 @@ import com.holzhausen.mediastore.model.MultimediaType;
 import com.holzhausen.mediastore.util.IAdapterHelper;
 import com.nambimobile.widgets.efab.FabOption;
 
+import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -47,6 +50,12 @@ public class MainActivity extends AppCompatActivity implements IAdapterHelper<Mu
     private static final int SHOOT_IMAGE_REQUEST_CODE = 1;
 
     private static final int NAME_IMAGE_REQUEST_CODE = 2;
+
+    private static final int GALLERY_IMAGE_REQUEST_CODE = 3;
+
+    private static final int NAME_IMAGE_FROM_GALLERY_REQUEST_CODE = 4;
+
+    private static final String IMAGE_SHORTCUT = ".png";
 
     private PublishSubject<List<MultimediaItem>> multimediaItemsSubject;
 
@@ -76,6 +85,13 @@ public class MainActivity extends AppCompatActivity implements IAdapterHelper<Mu
             startActivityForResult(intent, SHOOT_IMAGE_REQUEST_CODE);
         });
 
+        final FabOption galleryOption = findViewById(R.id.storage_option);
+        galleryOption.setOnClickListener(view -> {
+            Intent intent = new Intent(Intent.ACTION_PICK);
+            intent.setType("image/*");
+            startActivityForResult(intent, GALLERY_IMAGE_REQUEST_CODE);
+        });
+
         multimediaItemDao = ((MediaStoreApp)getApplication())
                 .getDatabase()
                 .multimediaItemDao();
@@ -101,13 +117,13 @@ public class MainActivity extends AppCompatActivity implements IAdapterHelper<Mu
     @Override
     protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
-        if (requestCode == SHOOT_IMAGE_REQUEST_CODE && resultCode == RESULT_OK) {
+        if (requestCode == SHOOT_IMAGE_REQUEST_CODE && resultCode == RESULT_OK && data != null) {
             final Bitmap takenPhoto = (Bitmap) data.getExtras().get("data");
             final Intent intent = new Intent(this, NameNewFileActivity.class);
             intent.putExtra("filePreview", takenPhoto);
             startActivityForResult(intent, NAME_IMAGE_REQUEST_CODE);
         }
-        else if(requestCode == NAME_IMAGE_REQUEST_CODE && resultCode == RESULT_OK) {
+        else if(requestCode == NAME_IMAGE_REQUEST_CODE && resultCode == RESULT_OK && data != null) {
             final Bitmap filePreview = (Bitmap) data.getExtras().get("filePreview");
             final String fileName = data.getStringExtra("fileTitle");
             final MultimediaItem multimediaItem = new MultimediaItem(fileName,
@@ -115,6 +131,17 @@ public class MainActivity extends AppCompatActivity implements IAdapterHelper<Mu
             insertItem(multimediaItem);
             saveBitmapToFile(filePreview, fileName);
         }
+//        else if(requestCode == GALLERY_IMAGE_REQUEST_CODE && resultCode == RESULT_OK && data != null) {
+//            final Uri uri = data.getData();
+//            try {
+//                final Intent intent = new Intent(this, NameNewFileActivity.class);
+//                intent.putExtra("filePreview", image);
+//                startActivityForResult(intent, NAME_IMAGE_FROM_GALLERY_REQUEST_CODE);
+//            } catch (IOException e) {
+//                e.printStackTrace();
+//                Toast.makeText(this, "Problems with file occurred", Toast.LENGTH_SHORT).show();
+//            }
+//        }
     }
 
     @Override
@@ -142,7 +169,18 @@ public class MainActivity extends AppCompatActivity implements IAdapterHelper<Mu
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe(() -> {
                     mediaItemAdapter.setDeletedItemToNull();
+                    deleteMediaFile(multimediaItem.getFileName());
                 });
+        compositeDisposable.add(disposable);
+    }
+
+    @Override
+    public void updateItem(MultimediaItem item) {
+        final Disposable disposable = multimediaItemDao
+                .update(item)
+                .subscribeOn(Schedulers.io())
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe();
         compositeDisposable.add(disposable);
     }
 
@@ -154,7 +192,7 @@ public class MainActivity extends AppCompatActivity implements IAdapterHelper<Mu
     @Override
     public Bitmap readBitmapFromFile(String fileName) {
         try {
-            FileInputStream fis = openFileInput(fileName);
+            FileInputStream fis = openFileInput(fileName + IMAGE_SHORTCUT);
             Bitmap bitmap = BitmapFactory.decodeStream(fis);
             fis.close();
             return bitmap;
@@ -166,7 +204,7 @@ public class MainActivity extends AppCompatActivity implements IAdapterHelper<Mu
 
     private void saveBitmapToFile(Bitmap bitmap, String fileName){
         try {
-            FileOutputStream fos = openFileOutput(fileName, MODE_PRIVATE);
+            FileOutputStream fos = openFileOutput(fileName + IMAGE_SHORTCUT, MODE_PRIVATE);
             bitmap.compress(Bitmap.CompressFormat.PNG, 100, fos);
             fos.close();
         } catch (IOException e) {
@@ -175,6 +213,13 @@ public class MainActivity extends AppCompatActivity implements IAdapterHelper<Mu
         }
     }
 
+    private void deleteMediaFile(String fileName) {
+        File file = getFileStreamPath(fileName + IMAGE_SHORTCUT);
+        boolean deleted = file.delete();
+        if(deleted) {
+            Log.i("File", "file deleted");
+        }
+    }
 
 
 }

@@ -2,6 +2,7 @@ package com.holzhausen.mediastore.adapters;
 
 import android.graphics.Bitmap;
 import android.graphics.drawable.Drawable;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -28,6 +29,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Observable;
 import java.util.Observer;
+import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -79,7 +81,7 @@ public class MediaItemAdapter extends RecyclerView.Adapter<MediaItemAdapter.View
     public ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
         final View view = LayoutInflater.from(parent.getContext())
                 .inflate(R.layout.multimedia_item, parent, false);
-        return new ViewHolder(view);
+        return new ViewHolder(view, this::updateLikeStatus);
     }
 
     @Override
@@ -141,7 +143,13 @@ public class MediaItemAdapter extends RecyclerView.Adapter<MediaItemAdapter.View
         snackbar.show();
     }
 
-    public static class ViewHolder extends RecyclerView.ViewHolder {
+    private void updateLikeStatus(int position) {
+        MultimediaItem multimediaItem = multimediaItems.get(position);
+        multimediaItem.setLiked(!multimediaItem.isLiked());
+        helper.updateItem(multimediaItem);
+    }
+
+    public static class ViewHolder extends RecyclerView.ViewHolder implements View.OnClickListener{
 
         private final ImageView preview;
 
@@ -153,14 +161,18 @@ public class MediaItemAdapter extends RecyclerView.Adapter<MediaItemAdapter.View
 
         private final TextView multimediaCreationDate;
 
-        public ViewHolder(@NonNull View itemView) {
+        private final Consumer<Integer> updateLikeStatusConsumer;
+
+        public ViewHolder(@NonNull View itemView, Consumer<Integer> updateLikeStatusConsumer) {
             super(itemView);
 
             preview = itemView.findViewById(R.id.preview_image);
             multimediaTypeIcon = itemView.findViewById(R.id.multimedia_type);
             likeIcon = itemView.findViewById(R.id.like_icon);
+            likeIcon.setOnClickListener(this);
             multimediaTitle = itemView.findViewById(R.id.multimedia_title);
             multimediaCreationDate = itemView.findViewById(R.id.multimedia_creation_date);
+            this.updateLikeStatusConsumer = updateLikeStatusConsumer;
         }
 
         public ImageView getPreview() {
@@ -181,6 +193,13 @@ public class MediaItemAdapter extends RecyclerView.Adapter<MediaItemAdapter.View
 
         public TextView getMultimediaCreationDate() {
             return multimediaCreationDate;
+        }
+
+        @Override
+        public void onClick(View v) {
+            if (v.getId() == likeIcon.getId()){
+                updateLikeStatusConsumer.accept(getAdapterPosition());
+            }
         }
     }
 

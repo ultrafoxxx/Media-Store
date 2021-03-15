@@ -20,7 +20,7 @@ public class MultimediaItem {
 
     private MultimediaType multimediaType;
 
-    private final boolean isLiked;
+    private boolean isLiked;
 
     public MultimediaItem(@NonNull String fileName, MultimediaType multimediaType, boolean isLiked) {
         this.fileName = fileName;
@@ -52,5 +52,9 @@ public class MultimediaItem {
 
     public void setMultimediaType(MultimediaType multimediaType) {
         this.multimediaType = multimediaType;
+    }
+
+    public void setLiked(boolean liked) {
+        isLiked = liked;
     }
 }

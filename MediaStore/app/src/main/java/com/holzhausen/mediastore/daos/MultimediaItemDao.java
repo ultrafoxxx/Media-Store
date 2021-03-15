@@ -4,6 +4,7 @@ import androidx.room.Dao;
 import androidx.room.Delete;
 import androidx.room.Insert;
 import androidx.room.Query;
+import androidx.room.Update;
 
 import com.holzhausen.mediastore.model.MultimediaItem;
 
@@ -18,6 +19,9 @@ public interface MultimediaItemDao {
 
     @Insert
     Completable insert(MultimediaItem multimediaItem);
+
+    @Update
+    Completable update(MultimediaItem multimediaItem);
 
     @Delete
     Completable delete(MultimediaItem multimediaItem);
