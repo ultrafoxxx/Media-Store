@@ -4,7 +4,10 @@ import androidx.appcompat.app.AppCompatActivity;
 
 import android.content.Intent;
 import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import android.net.Uri;
 import android.os.Bundle;
+import android.provider.MediaStore;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageView;
@@ -13,6 +16,9 @@ import android.widget.Toast;
 import com.holzhausen.mediastore.R;
 import com.holzhausen.mediastore.application.MediaStoreApp;
 import com.holzhausen.mediastore.daos.MultimediaItemDao;
+
+import java.io.File;
+import java.io.IOException;
 
 import io.reactivex.Scheduler;
 import io.reactivex.android.schedulers.AndroidSchedulers;
@@ -24,17 +30,28 @@ public class NameNewFileActivity extends AppCompatActivity {
 
     private CompositeDisposable compositeDisposable;
     
-    private boolean shouldFinishActivity;
+    private boolean properlyFinishedActivity;
+
+    private String fileName;
+
+    private ImageView imagePreview;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_name_new_file);
 
-        final Bitmap filePreview = (Bitmap) getIntent().getExtras().get("filePreview");
-        final ImageView imageView = findViewById(R.id.file_preview);
-        imageView.setImageBitmap(filePreview);
 
+        imagePreview = findViewById(R.id.file_preview);
+        fileName = getIntent().getStringExtra("fileName");
+        Uri uri = (Uri) getIntent().getExtras().get("fileUri");
+        if(fileName != null){
+
+            openImageByFileName(fileName);
+        }
+        else if(uri != null){
+            imagePreview.setImageURI(uri);
+        }
         final EditText titleInput = findViewById(R.id.title_text_input);
         final Button submitButton = findViewById(R.id.set_title_button);
 
@@ -57,9 +74,12 @@ public class NameNewFileActivity extends AppCompatActivity {
                         }
                         else {
                             Intent result = new Intent();
-                            result.putExtra("filePreview", filePreview);
                             result.putExtra("fileTitle", fileTitle);
+                            if(uri != null){
+                                result.putExtra("uri", uri);
+                            }
                             setResult(RESULT_OK, result);
+                            properlyFinishedActivity = true;
                             finish();
                         }
                     }, error -> {
@@ -75,6 +95,21 @@ public class NameNewFileActivity extends AppCompatActivity {
     @Override
     protected void onDestroy() {
         super.onDestroy();
+        if(!properlyFinishedActivity && fileName != null){
+            File image = new File(getFilesDir(), fileName);
+            image.delete();
+        }
         compositeDisposable.dispose();
     }
+
+    private void openImageByFileName(String fileName){
+        try {
+            Bitmap bitmap = BitmapFactory.decodeStream(openFileInput(fileName));
+            imagePreview.setImageBitmap(bitmap);
+        } catch (IOException e) {
+            e.printStackTrace();
+            Toast.makeText(this, "Something went wrong", Toast.LENGTH_SHORT);
+        }
+    }
+
 }

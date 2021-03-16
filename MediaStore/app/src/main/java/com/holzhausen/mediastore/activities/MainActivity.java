@@ -2,6 +2,7 @@ package com.holzhausen.mediastore.activities;
 
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.content.FileProvider;
 import androidx.recyclerview.widget.ItemTouchHelper;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
@@ -28,12 +29,20 @@ import com.holzhausen.mediastore.model.MultimediaType;
 import com.holzhausen.mediastore.util.IAdapterHelper;
 import com.nambimobile.widgets.efab.FabOption;
 
+import org.apache.commons.io.FileUtils;
+
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.net.URI;
+import java.nio.file.Files;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Locale;
 
 import io.reactivex.BackpressureStrategy;
 import io.reactivex.Flowable;
@@ -65,6 +74,8 @@ public class MainActivity extends AppCompatActivity implements IAdapterHelper<Mu
 
     private MultimediaItemDao multimediaItemDao;
 
+    private String temporaryFileName;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -81,7 +92,19 @@ public class MainActivity extends AppCompatActivity implements IAdapterHelper<Mu
 
         final FabOption photoOption = findViewById(R.id.new_photo_option);
         photoOption.setOnClickListener(view -> {
+            File image;
+            try {
+                image = createImageFile();
+            } catch (IOException e){
+                e.printStackTrace();
+                Toast.makeText(this, "Something went wrong", Toast.LENGTH_SHORT).show();
+                return;
+            }
+            Uri imageUri = FileProvider.getUriForFile(this,
+                    "com.holzhausen.mediastore.authority", image);
+            temporaryFileName = image.getName();
             Intent intent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
+            intent.putExtra(MediaStore.EXTRA_OUTPUT, imageUri);
             startActivityForResult(intent, SHOOT_IMAGE_REQUEST_CODE);
         });
 
@@ -117,31 +140,31 @@ public class MainActivity extends AppCompatActivity implements IAdapterHelper<Mu
     @Override
     protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
-        if (requestCode == SHOOT_IMAGE_REQUEST_CODE && resultCode == RESULT_OK && data != null) {
-            final Bitmap takenPhoto = (Bitmap) data.getExtras().get("data");
+        if (requestCode == SHOOT_IMAGE_REQUEST_CODE && resultCode == RESULT_OK) {
             final Intent intent = new Intent(this, NameNewFileActivity.class);
-            intent.putExtra("filePreview", takenPhoto);
+            intent.putExtra("fileName", temporaryFileName);
             startActivityForResult(intent, NAME_IMAGE_REQUEST_CODE);
         }
         else if(requestCode == NAME_IMAGE_REQUEST_CODE && resultCode == RESULT_OK && data != null) {
-            final Bitmap filePreview = (Bitmap) data.getExtras().get("filePreview");
             final String fileName = data.getStringExtra("fileTitle");
-            final MultimediaItem multimediaItem = new MultimediaItem(fileName,
+            final MultimediaItem multimediaItem = new MultimediaItem(fileName, temporaryFileName,
                     MultimediaType.IMAGE, false);
             insertItem(multimediaItem);
-            saveBitmapToFile(filePreview, fileName);
         }
-//        else if(requestCode == GALLERY_IMAGE_REQUEST_CODE && resultCode == RESULT_OK && data != null) {
-//            final Uri uri = data.getData();
-//            try {
-//                final Intent intent = new Intent(this, NameNewFileActivity.class);
-//                intent.putExtra("filePreview", image);
-//                startActivityForResult(intent, NAME_IMAGE_FROM_GALLERY_REQUEST_CODE);
-//            } catch (IOException e) {
-//                e.printStackTrace();
-//                Toast.makeText(this, "Problems with file occurred", Toast.LENGTH_SHORT).show();
-//            }
-//        }
+        else if(requestCode == GALLERY_IMAGE_REQUEST_CODE && resultCode == RESULT_OK && data != null) {
+            final Uri uri = data.getData();
+            final Intent intent = new Intent(this, NameNewFileActivity.class);
+            intent.putExtra("fileUri", uri);
+            startActivityForResult(intent, NAME_IMAGE_FROM_GALLERY_REQUEST_CODE);
+        }
+        else if(requestCode == NAME_IMAGE_FROM_GALLERY_REQUEST_CODE && resultCode == RESULT_OK && data != null) {
+            final String fileName = data.getStringExtra("fileTitle");
+            final Uri uri = (Uri) data.getExtras().get("uri");
+            File image = copyFile(uri);
+            final MultimediaItem multimediaItem = new MultimediaItem(fileName, image.getName(),
+                    MultimediaType.IMAGE, false);
+            insertItem(multimediaItem);
+        }
     }
 
     @Override
@@ -169,7 +192,7 @@ public class MainActivity extends AppCompatActivity implements IAdapterHelper<Mu
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe(() -> {
                     mediaItemAdapter.setDeletedItemToNull();
-                    deleteMediaFile(multimediaItem.getFileName());
+                    deleteMediaFile(multimediaItem.getFilePath());
                 });
         compositeDisposable.add(disposable);
     }
@@ -190,9 +213,9 @@ public class MainActivity extends AppCompatActivity implements IAdapterHelper<Mu
     }
 
     @Override
-    public Bitmap readBitmapFromFile(String fileName) {
+    public Bitmap readBitmapFromFile(String filePath) {
         try {
-            FileInputStream fis = openFileInput(fileName + IMAGE_SHORTCUT);
+            FileInputStream fis = openFileInput(filePath);
             Bitmap bitmap = BitmapFactory.decodeStream(fis);
             fis.close();
             return bitmap;
@@ -202,23 +225,37 @@ public class MainActivity extends AppCompatActivity implements IAdapterHelper<Mu
         }
     }
 
-    private void saveBitmapToFile(Bitmap bitmap, String fileName){
-        try {
-            FileOutputStream fos = openFileOutput(fileName + IMAGE_SHORTCUT, MODE_PRIVATE);
-            bitmap.compress(Bitmap.CompressFormat.PNG, 100, fos);
-            fos.close();
-        } catch (IOException e) {
-            Toast.makeText(this, "Problem saving image", Toast.LENGTH_SHORT).show();
-            e.printStackTrace();
-        }
-    }
-
-    private void deleteMediaFile(String fileName) {
-        File file = getFileStreamPath(fileName + IMAGE_SHORTCUT);
+    private void deleteMediaFile(String filePath) {
+        File file = getFileStreamPath(filePath);
         boolean deleted = file.delete();
         if(deleted) {
             Log.i("File", "file deleted");
         }
+    }
+
+    private File createImageFile() throws IOException {
+        String timeStamp = new SimpleDateFormat("yyyyMMdd_HHmmss", Locale.GERMANY).format(new Date());
+        String imageFileName = "Photo_" + timeStamp + "_";
+        File storageDir = getFilesDir();
+        return File.createTempFile(
+                imageFileName,  /* prefix */
+                IMAGE_SHORTCUT,         /* suffix */
+                storageDir      /* directory */
+        );
+    }
+
+    private File copyFile(Uri uri) {
+        try {
+            File image = createImageFile();
+            InputStream inputStream = getContentResolver().openInputStream(uri);
+            FileUtils.copyInputStreamToFile(inputStream, image);
+            return image;
+
+        } catch (IOException e){
+            e.printStackTrace();
+            return null;
+        }
+
     }
 
 

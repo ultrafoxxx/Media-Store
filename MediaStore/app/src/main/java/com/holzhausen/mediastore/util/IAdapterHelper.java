@@ -9,6 +9,6 @@ public interface IAdapterHelper<T> extends IDBHelper<T> {
 
     View getView(int resId);
 
-    Bitmap readBitmapFromFile(String fileName);
+    Bitmap readBitmapFromFile(String filePath);
 
 }

@@ -16,14 +16,18 @@ public class MultimediaItem {
     @NonNull
     private final String fileName;
 
+    private final String filePath;
+
     private Date creationDate;
 
     private MultimediaType multimediaType;
 
     private boolean isLiked;
 
-    public MultimediaItem(@NonNull String fileName, MultimediaType multimediaType, boolean isLiked) {
+    public MultimediaItem(@NonNull String fileName, String filePath, MultimediaType multimediaType,
+                          boolean isLiked) {
         this.fileName = fileName;
+        this.filePath = filePath;
         this.multimediaType = multimediaType;
         this.creationDate = new Date();
         this.isLiked = isLiked;
@@ -56,5 +60,9 @@ public class MultimediaItem {
 
     public void setLiked(boolean liked) {
         isLiked = liked;
+    }
+
+    public String getFilePath() {
+        return filePath;
     }
 }

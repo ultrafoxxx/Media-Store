@@ -86,7 +86,7 @@ public class MediaItemAdapter extends RecyclerView.Adapter<MediaItemAdapter.View
 
     @Override
     public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
-        final Bitmap preview = helper.readBitmapFromFile(multimediaItems.get(position).getFileName());
+        final Bitmap preview = helper.readBitmapFromFile(multimediaItems.get(position).getFilePath());
         if(preview != null) {
             holder.getPreview().setImageBitmap(preview);
         }
