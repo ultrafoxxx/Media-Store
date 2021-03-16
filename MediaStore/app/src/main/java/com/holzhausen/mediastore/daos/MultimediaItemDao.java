@@ -29,6 +29,18 @@ public interface MultimediaItemDao {
     @Query("SELECT * FROM MultimediaItem")
     Flowable<List<MultimediaItem>> getAll();
 
+    @Query("SELECT * FROM MultimediaItem ORDER BY fileName")
+    Flowable<List<MultimediaItem>> getAllItemsSortedByTitleAsc();
+
+    @Query("SELECT * FROM MultimediaItem ORDER BY fileName DESC")
+    Flowable<List<MultimediaItem>> getAllItemsSortedByTitleDesc();
+
+    @Query("SELECT * FROM MultimediaItem ORDER BY creationDate")
+    Flowable<List<MultimediaItem>> getAllItemsSortedByCreationDateAsc();
+
+    @Query("SELECT * FROM MultimediaItem ORDER BY creationDate DESC")
+    Flowable<List<MultimediaItem>> getAllItemsSortedByCreationDateDesc();
+
     @Query("SELECT COUNT(*) FROM MultimediaItem WHERE fileName=:fileName")
     Single<Integer> numberOfItemsWithProvidedFileName(String fileName);
 

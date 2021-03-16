@@ -1,5 +1,6 @@
 package com.holzhausen.mediastore.activities;
 
+import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.content.FileProvider;
@@ -14,6 +15,9 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.provider.MediaStore;
 import android.util.Log;
+import android.view.Menu;
+import android.view.MenuInflater;
+import android.view.MenuItem;
 import android.view.View;
 import android.widget.Toast;
 
@@ -121,16 +125,7 @@ public class MainActivity extends AppCompatActivity implements IAdapterHelper<Mu
 
         compositeDisposable = new CompositeDisposable();
 
-        Disposable disposable = multimediaItemDao.getAll()
-                .subscribeOn(Schedulers.io())
-                .observeOn(AndroidSchedulers.mainThread())
-                .subscribe(items -> {
-                    multimediaItemsSubject.onNext(items);
-                }, error -> {
-                    error.printStackTrace();
-                    Toast.makeText(this, "Something went wrong", Toast.LENGTH_SHORT).show();
-                });
-        compositeDisposable.add(disposable);
+        queryMultimediaItems(multimediaItemDao.getAll());
 
         final ItemTouchHelper itemTouchHelper =
                 new ItemTouchHelper(new SwipeDeleteItemCallback(mediaItemAdapter));
@@ -168,11 +163,37 @@ public class MainActivity extends AppCompatActivity implements IAdapterHelper<Mu
     }
 
     @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        MenuInflater menuInflater = getMenuInflater();
+        menuInflater.inflate(R.menu.sort_menu, menu);
+        return true;
+    }
+
+    @Override
     protected void onDestroy() {
         super.onDestroy();
         compositeDisposable.dispose();
     }
 
+    @Override
+    public boolean onOptionsItemSelected(@NonNull MenuItem item) {
+        switch (item.getItemId()) {
+            case R.id.ascending_title:
+                onSortClicked(multimediaItemDao.getAllItemsSortedByTitleAsc());
+                return true;
+            case R.id.descending_title:
+                onSortClicked(multimediaItemDao.getAllItemsSortedByTitleDesc());
+                return true;
+            case R.id.ascending_date:
+                onSortClicked(multimediaItemDao.getAllItemsSortedByCreationDateAsc());
+                return true;
+            case R.id.descending_date:
+                onSortClicked(multimediaItemDao.getAllItemsSortedByCreationDateDesc());
+                return true;
+
+        }
+        return true;
+    }
 
     @Override
     public void insertItem(MultimediaItem multimediaItem) {
@@ -256,6 +277,25 @@ public class MainActivity extends AppCompatActivity implements IAdapterHelper<Mu
             return null;
         }
 
+    }
+
+    private void onSortClicked(Flowable<List<MultimediaItem>> multimediaItems) {
+        compositeDisposable.dispose();
+        compositeDisposable = new CompositeDisposable();
+        queryMultimediaItems(multimediaItems);
+    }
+
+    private void queryMultimediaItems(Flowable<List<MultimediaItem>> multimediaItems) {
+        Disposable disposable = multimediaItems
+                .subscribeOn(Schedulers.io())
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe(items -> {
+                    multimediaItemsSubject.onNext(items);
+                }, error -> {
+                    error.printStackTrace();
+                    Toast.makeText(this, "Something went wrong", Toast.LENGTH_SHORT).show();
+                });
+        compositeDisposable.add(disposable);
     }
 
 

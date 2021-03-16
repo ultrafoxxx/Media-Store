@@ -2,4 +2,8 @@
     <string name="app_name">Media Store</string>
     <string name="multimedia_title_hint">File title</string>
     <string name="add_file_text">Add file</string>
+    <string name="sort_by_title_option">Sort by title</string>
+    <string name="ascending_option">Ascending</string>
+    <string name="descending_option">Descending</string>
+    <string name="sort_by_date_option">Sort by date</string>
 </resources>
