@@ -1,6 +1,7 @@
 package com.holzhausen.mediastore.activities;
 
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.content.FileProvider;
 
 import android.content.Intent;
 import android.graphics.Bitmap;
@@ -16,6 +17,7 @@ import android.widget.Toast;
 import com.holzhausen.mediastore.R;
 import com.holzhausen.mediastore.application.MediaStoreApp;
 import com.holzhausen.mediastore.daos.MultimediaItemDao;
+import com.holzhausen.mediastore.util.ImageHelper;
 
 import java.io.File;
 import java.io.IOException;
@@ -36,6 +38,8 @@ public class NameNewFileActivity extends AppCompatActivity {
 
     private ImageView imagePreview;
 
+    private Uri uri;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -44,10 +48,16 @@ public class NameNewFileActivity extends AppCompatActivity {
 
         imagePreview = findViewById(R.id.file_preview);
         fileName = getIntent().getStringExtra("fileName");
-        Uri uri = (Uri) getIntent().getExtras().get("fileUri");
+        uri = (Uri) getIntent().getExtras().get("fileUri");
         if(fileName != null){
-
             openImageByFileName(fileName);
+            uri = FileProvider.getUriForFile(this, "com.holzhausen.mediastore.authority",
+                    getFileStreamPath(fileName));
+            imagePreview.setRotation(
+                    ImageHelper
+                            .getImageOrientation(this, uri,
+                                    getFileStreamPath(fileName).getAbsolutePath()));
+
         }
         else if(uri != null){
             imagePreview.setImageURI(uri);
@@ -90,6 +100,16 @@ public class NameNewFileActivity extends AppCompatActivity {
             compositeDisposable.add(disposable);
         });
 
+        final Button editImageButton = findViewById(R.id.edit_photo_button);
+        editImageButton.setOnClickListener(view -> {
+            Intent intent = new Intent(Intent.ACTION_EDIT);
+            intent.setDataAndType(uri, "image/*");
+            intent.addFlags(Intent.FLAG_GRANT_WRITE_URI_PERMISSION | Intent.FLAG_GRANT_READ_URI_PERMISSION);
+            intent.putExtra(MediaStore.EXTRA_OUTPUT, uri);
+            startActivityForResult(Intent.createChooser(intent, null), 0);
+
+        });
+
     }
 
     @Override
@@ -108,7 +128,7 @@ public class NameNewFileActivity extends AppCompatActivity {
             imagePreview.setImageBitmap(bitmap);
         } catch (IOException e) {
             e.printStackTrace();
-            Toast.makeText(this, "Something went wrong", Toast.LENGTH_SHORT);
+            Toast.makeText(this, "Something went wrong", Toast.LENGTH_SHORT).show();
         }
     }
 

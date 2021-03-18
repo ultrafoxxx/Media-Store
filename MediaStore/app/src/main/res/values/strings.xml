@@ -6,4 +6,5 @@
     <string name="ascending_option">Ascending</string>
     <string name="descending_option">Descending</string>
     <string name="sort_by_date_option">Sort by date</string>
+    <string name="edit_photo_text">Edit image</string>
 </resources>

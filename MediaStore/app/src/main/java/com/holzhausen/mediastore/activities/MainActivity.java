@@ -8,6 +8,7 @@ import androidx.recyclerview.widget.ItemTouchHelper;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import android.content.Context;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
@@ -244,6 +245,26 @@ public class MainActivity extends AppCompatActivity implements IAdapterHelper<Mu
             e.printStackTrace();
             return null;
         }
+    }
+
+    @Override
+    public void viewImage(String fileName) {
+        Uri imageUri = getFileUri(fileName);
+        Intent intent = new Intent(Intent.ACTION_VIEW);
+        intent.setDataAndType(imageUri, "image/*");
+        intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
+        intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION | Intent.FLAG_GRANT_WRITE_URI_PERMISSION);
+        startActivity(intent);
+    }
+
+    @Override
+    public Context getContext() {
+        return this;
+    }
+
+    private Uri getFileUri(String fileName) {
+        return FileProvider.getUriForFile(this, "com.holzhausen.mediastore.authority",
+                getFileStreamPath(fileName));
     }
 
     private void deleteMediaFile(String filePath) {
