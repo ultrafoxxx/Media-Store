@@ -35,6 +35,8 @@ dependencies {
     implementation 'androidx.constraintlayout:constraintlayout:2.0.4'
     implementation 'com.nambimobile.widgets:expandable-fab:1.0.2'
     implementation 'io.reactivex.rxjava2:rxandroid:2.0.1'
+    implementation 'com.oginotihiro:cropview:1.0.0'
+    implementation 'com.github.mukeshsolanki:photofilter:2.0.2'
     testImplementation 'junit:junit:4.+'
     androidTestImplementation 'androidx.test.ext:junit:1.1.2'
     androidTestImplementation 'androidx.test.espresso:espresso-core:3.3.0'

@@ -32,6 +32,7 @@ import com.holzhausen.mediastore.databases.IDBHelper;
 import com.holzhausen.mediastore.model.MultimediaItem;
 import com.holzhausen.mediastore.model.MultimediaType;
 import com.holzhausen.mediastore.util.IAdapterHelper;
+import com.holzhausen.mediastore.util.ImageHelper;
 import com.nambimobile.widgets.efab.FabOption;
 
 import org.apache.commons.io.FileUtils;
@@ -69,8 +70,6 @@ public class MainActivity extends AppCompatActivity implements IAdapterHelper<Mu
 
     private static final int NAME_IMAGE_FROM_GALLERY_REQUEST_CODE = 4;
 
-    private static final String IMAGE_SHORTCUT = ".png";
-
     private PublishSubject<List<MultimediaItem>> multimediaItemsSubject;
 
     private MediaItemAdapter mediaItemAdapter;
@@ -99,7 +98,7 @@ public class MainActivity extends AppCompatActivity implements IAdapterHelper<Mu
         photoOption.setOnClickListener(view -> {
             File image;
             try {
-                image = createImageFile();
+                image = ImageHelper.createImageFile(this);
             } catch (IOException e){
                 e.printStackTrace();
                 Toast.makeText(this, "Something went wrong", Toast.LENGTH_SHORT).show();
@@ -143,6 +142,10 @@ public class MainActivity extends AppCompatActivity implements IAdapterHelper<Mu
         }
         else if(requestCode == NAME_IMAGE_REQUEST_CODE && resultCode == RESULT_OK && data != null) {
             final String fileName = data.getStringExtra("fileTitle");
+            final String filePath = data.getStringExtra("fileName");
+            if(filePath != null){
+                temporaryFileName = filePath;
+            }
             final MultimediaItem multimediaItem = new MultimediaItem(fileName, temporaryFileName,
                     MultimediaType.IMAGE, false);
             insertItem(multimediaItem);
@@ -156,7 +159,13 @@ public class MainActivity extends AppCompatActivity implements IAdapterHelper<Mu
         else if(requestCode == NAME_IMAGE_FROM_GALLERY_REQUEST_CODE && resultCode == RESULT_OK && data != null) {
             final String fileName = data.getStringExtra("fileTitle");
             final Uri uri = (Uri) data.getExtras().get("uri");
-            File image = copyFile(uri);
+            final String name = data.getStringExtra("fileName");
+            File image;
+            if(name != null) {
+                image = getFileStreamPath(name);
+            } else {
+                image = copyFile(uri);
+            }
             final MultimediaItem multimediaItem = new MultimediaItem(fileName, image.getName(),
                     MultimediaType.IMAGE, false);
             insertItem(multimediaItem);
@@ -275,22 +284,12 @@ public class MainActivity extends AppCompatActivity implements IAdapterHelper<Mu
         }
     }
 
-    private File createImageFile() throws IOException {
-        String timeStamp = new SimpleDateFormat("yyyyMMdd_HHmmss", Locale.GERMANY).format(new Date());
-        String imageFileName = "Photo_" + timeStamp + "_";
-        File storageDir = getFilesDir();
-        return File.createTempFile(
-                imageFileName,  /* prefix */
-                IMAGE_SHORTCUT,         /* suffix */
-                storageDir      /* directory */
-        );
-    }
-
     private File copyFile(Uri uri) {
         try {
-            File image = createImageFile();
+            File image = ImageHelper.createImageFile(this);;
             InputStream inputStream = getContentResolver().openInputStream(uri);
             FileUtils.copyInputStreamToFile(inputStream, image);
+            inputStream.close();
             return image;
 
         } catch (IOException e){

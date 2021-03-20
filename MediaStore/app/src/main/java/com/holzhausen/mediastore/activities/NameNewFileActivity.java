@@ -1,5 +1,6 @@
 package com.holzhausen.mediastore.activities;
 
+import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.content.FileProvider;
 
@@ -36,9 +37,15 @@ public class NameNewFileActivity extends AppCompatActivity {
 
     private String fileName;
 
+    private String originalFileName;
+
     private ImageView imagePreview;
 
     private Uri uri;
+
+    private Uri originalUri;
+
+    private final static int EDIT_PHOTO_REQUEST_CODE = 6;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -57,11 +64,13 @@ public class NameNewFileActivity extends AppCompatActivity {
                     ImageHelper
                             .getImageOrientation(this, uri,
                                     getFileStreamPath(fileName).getAbsolutePath()));
+            originalFileName = fileName;
 
         }
         else if(uri != null){
             imagePreview.setImageURI(uri);
         }
+        originalUri = uri;
         final EditText titleInput = findViewById(R.id.title_text_input);
         final Button submitButton = findViewById(R.id.set_title_button);
 
@@ -87,6 +96,9 @@ public class NameNewFileActivity extends AppCompatActivity {
                             result.putExtra("fileTitle", fileTitle);
                             if(uri != null){
                                 result.putExtra("uri", uri);
+                                if(!uri.equals(originalUri)){
+                                    result.putExtra("fileName", fileName);
+                                }
                             }
                             setResult(RESULT_OK, result);
                             properlyFinishedActivity = true;
@@ -102,14 +114,26 @@ public class NameNewFileActivity extends AppCompatActivity {
 
         final Button editImageButton = findViewById(R.id.edit_photo_button);
         editImageButton.setOnClickListener(view -> {
-            Intent intent = new Intent(Intent.ACTION_EDIT);
-            intent.setDataAndType(uri, "image/*");
-            intent.addFlags(Intent.FLAG_GRANT_WRITE_URI_PERMISSION | Intent.FLAG_GRANT_READ_URI_PERMISSION);
-            intent.putExtra(MediaStore.EXTRA_OUTPUT, uri);
-            startActivityForResult(Intent.createChooser(intent, null), 0);
+            Intent intent = new Intent(this, EditPhotoActivity.class);
+            intent.putExtra("uri", originalUri);
+            if(fileName != null) {
+                intent.putExtra("fileName", fileName);
+            }
+            startActivityForResult(intent, EDIT_PHOTO_REQUEST_CODE);
 
         });
 
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        if(requestCode == EDIT_PHOTO_REQUEST_CODE && resultCode == RESULT_OK) {
+            fileName = data.getStringExtra("fileName");
+            uri = FileProvider.getUriForFile(this, "com.holzhausen.mediastore.authority",
+                    getFileStreamPath(fileName));
+            imagePreview.setImageURI(uri);
+        }
     }
 
     @Override
@@ -117,6 +141,10 @@ public class NameNewFileActivity extends AppCompatActivity {
         super.onDestroy();
         if(!properlyFinishedActivity && fileName != null){
             File image = new File(getFilesDir(), fileName);
+            image.delete();
+        }
+        else if(properlyFinishedActivity && !originalFileName.equals(fileName)) {
+            File image = new File(getFilesDir(), originalFileName);
             image.delete();
         }
         compositeDisposable.dispose();

@@ -8,7 +8,10 @@ import androidx.core.content.FileProvider;
 
 import java.io.File;
 import java.io.IOException;
+import java.text.SimpleDateFormat;
 import java.util.AbstractMap;
+import java.util.Date;
+import java.util.Locale;
 import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -35,6 +38,17 @@ public class ImageHelper {
             e.printStackTrace();
         }
         return 0;
+    }
+
+    public static File createImageFile(Context context) throws IOException {
+        String timeStamp = new SimpleDateFormat("yyyyMMdd_HHmmss", Locale.GERMANY).format(new Date());
+        String imageFileName = "Photo_" + timeStamp + "_";
+        File storageDir = context.getFilesDir();
+        return File.createTempFile(
+                imageFileName,  /* prefix */
+                ".png",         /* suffix */
+                storageDir      /* directory */
+        );
     }
 
 }

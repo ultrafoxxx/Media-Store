@@ -7,4 +7,12 @@
     <string name="descending_option">Descending</string>
     <string name="sort_by_date_option">Sort by date</string>
     <string name="edit_photo_text">Edit image</string>
+    <string-array name="filters_array">
+        <item>Documentary</item>
+        <item>Vignette</item>
+        <item>GrayScale</item>
+        <item>Lomoish</item>
+        <item>Sepia</item>
+        <item>Posterize</item>
+    </string-array>
 </resources>
