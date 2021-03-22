@@ -74,7 +74,7 @@ public class EditPhotoActivity extends AppCompatActivity implements AdapterView.
 
         editView = findViewById(R.id.imageToEdit);
         uri = (Uri) getIntent().getExtras().get("uri");
-        String fileName = getIntent().getExtras().getString("uri");
+        String fileName = getIntent().getExtras().getString("fileName");
         resultImage = getOriginalImage(uri);
         if(fileName != null) {
             Matrix matrix = new Matrix();

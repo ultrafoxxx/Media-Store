@@ -10,10 +10,9 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/Theme.MediaStore">
-        <activity android:name=".activities.EditPhotoActivity"></activity>
-
+        <activity android:name=".activities.CropPhotoActivity"></activity>
+        <activity android:name=".activities.EditPhotoActivity" />
         <activity android:name=".activities.NameNewFileActivity" />
-
         <activity android:name=".activities.MainActivity">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -21,6 +20,7 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+
         <provider
             android:name="androidx.core.content.FileProvider"
             android:authorities="com.holzhausen.mediastore.authority"

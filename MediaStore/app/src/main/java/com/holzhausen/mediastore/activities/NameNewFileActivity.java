@@ -47,6 +47,8 @@ public class NameNewFileActivity extends AppCompatActivity {
 
     private final static int EDIT_PHOTO_REQUEST_CODE = 6;
 
+    private final static int CROP_PHOTO_REQUEST_CODE = 7;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -123,12 +125,29 @@ public class NameNewFileActivity extends AppCompatActivity {
 
         });
 
+        final Button cropImageButton = findViewById(R.id.cropImageButton);
+        cropImageButton.setOnClickListener(view -> {
+            Intent intent = new Intent(this, CropPhotoActivity.class);
+            intent.putExtra("uri", originalUri);
+            if(fileName != null) {
+                intent.putExtra("fileName", fileName);
+            }
+            startActivityForResult(intent, CROP_PHOTO_REQUEST_CODE);
+
+        });
+
     }
 
     @Override
     protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
         if(requestCode == EDIT_PHOTO_REQUEST_CODE && resultCode == RESULT_OK) {
+            fileName = data.getStringExtra("fileName");
+            uri = FileProvider.getUriForFile(this, "com.holzhausen.mediastore.authority",
+                    getFileStreamPath(fileName));
+            imagePreview.setImageURI(uri);
+        }
+        else if(requestCode == CROP_PHOTO_REQUEST_CODE && resultCode == RESULT_OK) {
             fileName = data.getStringExtra("fileName");
             uri = FileProvider.getUriForFile(this, "com.holzhausen.mediastore.authority",
                     getFileStreamPath(fileName));
