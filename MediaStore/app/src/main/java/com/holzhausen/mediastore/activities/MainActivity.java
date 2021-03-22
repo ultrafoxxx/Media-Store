@@ -105,7 +105,7 @@ public class MainActivity extends AppCompatActivity implements IAdapterHelper<Mu
                 return;
             }
             Uri imageUri = FileProvider.getUriForFile(this,
-                    "com.holzhausen.mediastore.authority", image);
+                    ImageHelper.FILE_PROVIDER_ACCESS, image);
             temporaryFileName = image.getName();
             Intent intent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
             intent.putExtra(MediaStore.EXTRA_OUTPUT, imageUri);
@@ -272,7 +272,7 @@ public class MainActivity extends AppCompatActivity implements IAdapterHelper<Mu
     }
 
     private Uri getFileUri(String fileName) {
-        return FileProvider.getUriForFile(this, "com.holzhausen.mediastore.authority",
+        return FileProvider.getUriForFile(this, ImageHelper.FILE_PROVIDER_ACCESS,
                 getFileStreamPath(fileName));
     }
 

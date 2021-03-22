@@ -19,6 +19,8 @@ import java.util.stream.Stream;
 
 public class ImageHelper {
 
+    public final static String FILE_PROVIDER_ACCESS = "com.holzhausen.mediastore.authority";
+
     private final static Map<Integer, Integer> orientations = Stream.of(
             new AbstractMap.SimpleImmutableEntry<>(ExifInterface.ORIENTATION_UNDEFINED, 0),
             new AbstractMap.SimpleImmutableEntry<>(ExifInterface.ORIENTATION_ROTATE_90, 90),

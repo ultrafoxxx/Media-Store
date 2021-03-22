@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <dimen name="standard_space_between_elements">15dp</dimen>
+    <dimen name="extra_space_between_elements">20dp</dimen>
+    <dimen name="input_left_and_right_margin">10dp</dimen>
+    <dimen name="top_margin">75dp</dimen>
+</resources>

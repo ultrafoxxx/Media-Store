@@ -98,7 +98,7 @@ public class MediaItemAdapter extends RecyclerView.Adapter<MediaItemAdapter.View
             File imageFile = helper
                     .getContext()
                     .getFileStreamPath(multimediaItems.get(position).getFilePath());
-            Uri imageUri = FileProvider.getUriForFile(helper.getContext(), "com.holzhausen.mediastore.authority",
+            Uri imageUri = FileProvider.getUriForFile(helper.getContext(), ImageHelper.FILE_PROVIDER_ACCESS,
                     imageFile);
             holder
                     .getPreview()

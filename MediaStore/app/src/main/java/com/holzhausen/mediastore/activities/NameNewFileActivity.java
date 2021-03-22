@@ -21,6 +21,7 @@ import com.holzhausen.mediastore.daos.MultimediaItemDao;
 import com.holzhausen.mediastore.util.ImageHelper;
 
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
 
 import io.reactivex.Scheduler;
@@ -60,7 +61,7 @@ public class NameNewFileActivity extends AppCompatActivity {
         uri = (Uri) getIntent().getExtras().get("fileUri");
         if(fileName != null){
             openImageByFileName(fileName);
-            uri = FileProvider.getUriForFile(this, "com.holzhausen.mediastore.authority",
+            uri = FileProvider.getUriForFile(this, ImageHelper.FILE_PROVIDER_ACCESS,
                     getFileStreamPath(fileName));
             imagePreview.setRotation(
                     ImageHelper
@@ -141,15 +142,10 @@ public class NameNewFileActivity extends AppCompatActivity {
     @Override
     protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
-        if(requestCode == EDIT_PHOTO_REQUEST_CODE && resultCode == RESULT_OK) {
+        if((requestCode == EDIT_PHOTO_REQUEST_CODE || requestCode == CROP_PHOTO_REQUEST_CODE)
+                && resultCode == RESULT_OK) {
             fileName = data.getStringExtra("fileName");
-            uri = FileProvider.getUriForFile(this, "com.holzhausen.mediastore.authority",
-                    getFileStreamPath(fileName));
-            imagePreview.setImageURI(uri);
-        }
-        else if(requestCode == CROP_PHOTO_REQUEST_CODE && resultCode == RESULT_OK) {
-            fileName = data.getStringExtra("fileName");
-            uri = FileProvider.getUriForFile(this, "com.holzhausen.mediastore.authority",
+            uri = FileProvider.getUriForFile(this, ImageHelper.FILE_PROVIDER_ACCESS,
                     getFileStreamPath(fileName));
             imagePreview.setImageURI(uri);
         }
@@ -171,7 +167,9 @@ public class NameNewFileActivity extends AppCompatActivity {
 
     private void openImageByFileName(String fileName){
         try {
-            Bitmap bitmap = BitmapFactory.decodeStream(openFileInput(fileName));
+            FileInputStream fis = openFileInput(fileName);
+            Bitmap bitmap = BitmapFactory.decodeStream(fis);
+            fis.close();
             imagePreview.setImageBitmap(bitmap);
         } catch (IOException e) {
             e.printStackTrace();
