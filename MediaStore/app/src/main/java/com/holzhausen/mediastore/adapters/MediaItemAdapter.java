@@ -15,12 +15,15 @@ import androidx.annotation.NonNull;
 import androidx.core.content.FileProvider;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.google.android.material.chip.Chip;
 import com.google.android.material.snackbar.Snackbar;
 import com.holzhausen.mediastore.R;
 import com.holzhausen.mediastore.callbacks.DeleteItemSnackBarCallback;
 import com.holzhausen.mediastore.databases.IDBHelper;
 import com.holzhausen.mediastore.model.MultimediaItem;
+import com.holzhausen.mediastore.model.MultimediaItemsTags;
 import com.holzhausen.mediastore.model.MultimediaType;
+import com.holzhausen.mediastore.model.Tag;
 import com.holzhausen.mediastore.util.IAdapterHelper;
 import com.holzhausen.mediastore.util.IViewHolderHelper;
 import com.holzhausen.mediastore.util.ImageHelper;
@@ -29,6 +32,7 @@ import java.io.File;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.AbstractMap;
+import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Locale;
@@ -46,13 +50,13 @@ import io.reactivex.disposables.Disposable;
 
 public class MediaItemAdapter extends RecyclerView.Adapter<MediaItemAdapter.ViewHolder> implements IViewHolderHelper {
 
-    private List<MultimediaItem> multimediaItems;
+    private List<MultimediaItemsTags> multimediaItems;
 
     private final Disposable disposable;
 
     private final IAdapterHelper<MultimediaItem> helper;
 
-    private MultimediaItem deletedItem;
+    private MultimediaItemsTags deletedItem;
 
     private int deletedItemPosition;
 
@@ -70,7 +74,7 @@ public class MediaItemAdapter extends RecyclerView.Adapter<MediaItemAdapter.View
             )
     ).collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
 
-    public MediaItemAdapter(Flowable<List<MultimediaItem>> multimediaItems,
+    public MediaItemAdapter(Flowable<List<MultimediaItemsTags>> multimediaItems,
                             final IAdapterHelper<MultimediaItem> helper) {
         this.multimediaItems = new LinkedList<>();
         disposable = multimediaItems
@@ -92,12 +96,12 @@ public class MediaItemAdapter extends RecyclerView.Adapter<MediaItemAdapter.View
 
     @Override
     public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
-        final Bitmap preview = helper.readBitmapFromFile(multimediaItems.get(position).getFilePath());
+        final Bitmap preview = helper.readBitmapFromFile(multimediaItems.get(position).getMultimediaItem().getFilePath());
         if(preview != null) {
             holder.getPreview().setImageBitmap(preview);
             File imageFile = helper
                     .getContext()
-                    .getFileStreamPath(multimediaItems.get(position).getFilePath());
+                    .getFileStreamPath(multimediaItems.get(position).getMultimediaItem().getFilePath());
             Uri imageUri = FileProvider.getUriForFile(helper.getContext(), ImageHelper.FILE_PROVIDER_ACCESS,
                     imageFile);
             holder
@@ -110,16 +114,22 @@ public class MediaItemAdapter extends RecyclerView.Adapter<MediaItemAdapter.View
                 .setImageResource(IMAGE_TYPE_ICONS
                         .get(multimediaItems
                         .get(position)
+                                .getMultimediaItem()
                                 .getMultimediaType()));
         holder
                 .getLikeIcon()
-                .setImageResource(multimediaItems.get(position).isLiked() ?
+                .setImageResource(multimediaItems.get(position).getMultimediaItem().isLiked() ?
                         R.drawable.ic_baseline_star_24 : R.drawable.ic_baseline_star_border_24);
-        holder.getMultimediaTitle().setText(multimediaItems.get(position).getFileName());
+        holder.getMultimediaTitle().setText(multimediaItems.get(position).getMultimediaItem().getFileName());
         holder
                 .getMultimediaCreationDate()
                 .setText(new SimpleDateFormat("dd-MM-yyyy HH:mm:ss", Locale.GERMANY)
-                .format(multimediaItems.get(position).getCreationDate()));
+                .format(multimediaItems.get(position).getMultimediaItem().getCreationDate()));
+        List<Tag> tags = multimediaItems.get(position).getTags();
+        for (int i=0;i<tags.size();i++) {
+            holder.getItemTagsChips()[i].setText(tags.get(i).getTagName());
+            holder.getItemTagsChips()[i].setVisibility(View.VISIBLE);
+        }
     }
 
     @Override
@@ -131,7 +141,7 @@ public class MediaItemAdapter extends RecyclerView.Adapter<MediaItemAdapter.View
     public void onDetachedFromRecyclerView(@NonNull RecyclerView recyclerView) {
         super.onDetachedFromRecyclerView(recyclerView);
         if(deletedItem != null) {
-            helper.removeItem(deletedItem);
+            helper.removeItem(deletedItem.getMultimediaItem());
         }
         disposable.dispose();
     }
@@ -154,20 +164,20 @@ public class MediaItemAdapter extends RecyclerView.Adapter<MediaItemAdapter.View
             multimediaItems.add(deletedItemPosition, deletedItem);
             notifyItemInserted(deletedItemPosition);
         });
-        snackbar.addCallback(new DeleteItemSnackBarCallback(helper, deletedItem));
+        snackbar.addCallback(new DeleteItemSnackBarCallback(helper, deletedItem.getMultimediaItem()));
         snackbar.show();
     }
 
     @Override
     public void updateLikeStatus(int position) {
-        MultimediaItem multimediaItem = multimediaItems.get(position);
+        MultimediaItem multimediaItem = multimediaItems.get(position).getMultimediaItem();
         multimediaItem.setLiked(!multimediaItem.isLiked());
         helper.updateItem(multimediaItem);
     }
 
     @Override
     public void viewImage(int position) {
-        MultimediaItem multimediaItem = multimediaItems.get(position);
+        MultimediaItem multimediaItem = multimediaItems.get(position).getMultimediaItem();
         helper.viewImage(multimediaItem.getFilePath());
     }
 
@@ -183,6 +193,8 @@ public class MediaItemAdapter extends RecyclerView.Adapter<MediaItemAdapter.View
 
         private final TextView multimediaCreationDate;
 
+        private final Chip[] itemTagsChips;
+
         private final IViewHolderHelper viewHolderHelper;
 
         public ViewHolder(@NonNull View itemView, IViewHolderHelper viewHolderHelper) {
@@ -195,6 +207,11 @@ public class MediaItemAdapter extends RecyclerView.Adapter<MediaItemAdapter.View
             likeIcon.setOnClickListener(this);
             multimediaTitle = itemView.findViewById(R.id.multimedia_title);
             multimediaCreationDate = itemView.findViewById(R.id.multimedia_creation_date);
+            itemTagsChips = Stream.of(
+                    (Chip) itemView.findViewById(R.id.item_chip_1),
+                    (Chip) itemView.findViewById(R.id.item_chip_2),
+                    (Chip) itemView.findViewById(R.id.item_chip_3)
+            ).toArray(Chip[]::new);
             this.viewHolderHelper = viewHolderHelper;
         }
 
@@ -216,6 +233,10 @@ public class MediaItemAdapter extends RecyclerView.Adapter<MediaItemAdapter.View
 
         public TextView getMultimediaCreationDate() {
             return multimediaCreationDate;
+        }
+
+        public Chip[] getItemTagsChips() {
+            return itemTagsChips;
         }
 
         @Override

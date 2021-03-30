@@ -4,9 +4,11 @@ import androidx.room.Dao;
 import androidx.room.Delete;
 import androidx.room.Insert;
 import androidx.room.Query;
+import androidx.room.Transaction;
 import androidx.room.Update;
 
 import com.holzhausen.mediastore.model.MultimediaItem;
+import com.holzhausen.mediastore.model.MultimediaItemsTags;
 
 import java.util.List;
 
@@ -26,20 +28,32 @@ public interface MultimediaItemDao {
     @Delete
     Completable delete(MultimediaItem multimediaItem);
 
+    @Transaction
     @Query("SELECT * FROM MultimediaItem")
-    Flowable<List<MultimediaItem>> getAll();
+    Flowable<List<MultimediaItemsTags>> getAll();
 
+    @Transaction
     @Query("SELECT * FROM MultimediaItem ORDER BY fileName")
-    Flowable<List<MultimediaItem>> getAllItemsSortedByTitleAsc();
+    Flowable<List<MultimediaItemsTags>> getAllItemsSortedByTitleAsc();
 
+    @Transaction
     @Query("SELECT * FROM MultimediaItem ORDER BY fileName DESC")
-    Flowable<List<MultimediaItem>> getAllItemsSortedByTitleDesc();
+    Flowable<List<MultimediaItemsTags>> getAllItemsSortedByTitleDesc();
 
+    @Transaction
     @Query("SELECT * FROM MultimediaItem ORDER BY creationDate")
-    Flowable<List<MultimediaItem>> getAllItemsSortedByCreationDateAsc();
+    Flowable<List<MultimediaItemsTags>> getAllItemsSortedByCreationDateAsc();
 
+    @Transaction
     @Query("SELECT * FROM MultimediaItem ORDER BY creationDate DESC")
-    Flowable<List<MultimediaItem>> getAllItemsSortedByCreationDateDesc();
+    Flowable<List<MultimediaItemsTags>> getAllItemsSortedByCreationDateDesc();
+
+    @Transaction
+    @Query("SELECT *" +
+            "FROM MultimediaItem M JOIN MultimediaItemTagCrossRefFTS MFTS " +
+            "ON M.fileName=MFTS.fileName " +
+            "WHERE MultimediaItemTagCrossRefFTS MATCH :query")
+    Flowable<List<MultimediaItemsTags>> queryItemsByNamesAndTags(String query);
 
     @Query("SELECT COUNT(*) FROM MultimediaItem WHERE fileName=:fileName")
     Single<Integer> numberOfItemsWithProvidedFileName(String fileName);

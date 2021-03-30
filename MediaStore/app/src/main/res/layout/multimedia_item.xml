@@ -60,4 +60,46 @@
         app:layout_constraintStart_toEndOf="@+id/multimedia_type"
         app:layout_constraintTop_toTopOf="parent"
         tools:text="Creation date" />
+
+    <HorizontalScrollView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="15dp"
+        android:layout_marginTop="10dp"
+        android:layout_marginEnd="15dp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/multimedia_title">
+
+        <com.google.android.material.chip.ChipGroup
+            android:id="@+id/item_tag_group"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content">
+
+            <com.google.android.material.chip.Chip
+                android:id="@+id/item_chip_1"
+                style="@style/Widget.MaterialComponents.Chip.Entry"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:visibility="gone"
+                tools:text="Tag1" />
+
+            <com.google.android.material.chip.Chip
+                android:id="@+id/item_chip_2"
+                style="@style/Widget.MaterialComponents.Chip.Entry"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:visibility="gone"
+                tools:text="Tag2" />
+
+            <com.google.android.material.chip.Chip
+                android:id="@+id/item_chip_3"
+                style="@style/Widget.MaterialComponents.Chip.Entry"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:visibility="gone"
+                tools:text="Tag3" />
+
+        </com.google.android.material.chip.ChipGroup>
+    </HorizontalScrollView>
 </androidx.constraintlayout.widget.ConstraintLayout>

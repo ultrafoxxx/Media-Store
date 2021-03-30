@@ -10,19 +10,26 @@ import android.graphics.BitmapFactory;
 import android.net.Uri;
 import android.os.Bundle;
 import android.provider.MediaStore;
+import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.Toast;
 
+import com.google.android.material.chip.Chip;
 import com.holzhausen.mediastore.R;
 import com.holzhausen.mediastore.application.MediaStoreApp;
 import com.holzhausen.mediastore.daos.MultimediaItemDao;
+import com.holzhausen.mediastore.model.MultimediaItem;
 import com.holzhausen.mediastore.util.ImageHelper;
 
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import io.reactivex.Scheduler;
 import io.reactivex.android.schedulers.AndroidSchedulers;
@@ -45,6 +52,10 @@ public class NameNewFileActivity extends AppCompatActivity {
     private Uri uri;
 
     private Uri originalUri;
+
+    private int visibleTags;
+
+    private List<String> tagNames;
 
     private final static int EDIT_PHOTO_REQUEST_CODE = 6;
 
@@ -97,6 +108,7 @@ public class NameNewFileActivity extends AppCompatActivity {
                         else {
                             Intent result = new Intent();
                             result.putExtra("fileTitle", fileTitle);
+                            result.putExtra("fileTags", tagNames.toArray(new String[visibleTags]));
                             if(uri != null){
                                 result.putExtra("uri", uri);
                                 if(!uri.equals(originalUri)){
@@ -136,6 +148,43 @@ public class NameNewFileActivity extends AppCompatActivity {
             startActivityForResult(intent, CROP_PHOTO_REQUEST_CODE);
 
         });
+
+        final EditText tagInput = findViewById(R.id.tag_text_input);
+        final Button addTagButton = findViewById(R.id.add_tag_button);
+        final Chip[] tagChips = {
+                (Chip) findViewById(R.id.chip_1),
+                (Chip) findViewById(R.id.chip_2),
+                (Chip) findViewById(R.id.chip_3)
+        };
+        tagNames = new ArrayList<>();
+        addTagButton.setOnClickListener(view -> {
+            final String tagValue = tagInput.getText().toString();
+            if(tagValue == null || tagValue.isEmpty()){
+                return;
+            }
+            if(visibleTags < tagChips.length) {
+                Chip tagChip = tagChips[visibleTags];
+                tagNames.add(tagValue);
+                tagChip.setText(tagValue);
+                tagChip.setVisibility(View.VISIBLE);
+                visibleTags++;
+            }
+            tagInput.setText("");
+        });
+
+        for (Chip tagChip : tagChips) {
+            tagChip.setOnCloseIconClickListener(view -> {
+                visibleTags--;
+                tagNames = tagNames
+                        .stream()
+                        .filter(tagName -> !tagName.contentEquals(((Chip)view).getText()))
+                        .collect(Collectors.toList());
+                tagChips[visibleTags].setVisibility(View.GONE);
+                for(int i=0;i<tagNames.size();i++){
+                    tagChips[i].setText(tagNames.get(i));
+                }
+            });
+        }
 
     }
 

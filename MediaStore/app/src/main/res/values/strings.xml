@@ -6,8 +6,10 @@
     <string name="ascending_option">Ascending</string>
     <string name="descending_option">Descending</string>
     <string name="sort_by_date_option">Sort by date</string>
-    <string name="edit_photo_text">Edit image</string>
-    <string name="crop_photo_text">Crop image</string>
+    <string name="edit_photo_text">Edit</string>
+    <string name="crop_photo_text">Crop</string>
+    <string name="multimedia_tag_hint">Provide max 3 names of tags</string>
+    <string name="add_text">Add</string>
     <string-array name="filters_array">
         <item>Documentary</item>
         <item>Vignette</item>

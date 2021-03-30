@@ -8,8 +8,8 @@
 
     <ImageView
         android:id="@+id/file_preview"
-        android:layout_width="359dp"
-        android:layout_height="447dp"
+        android:layout_width="331dp"
+        android:layout_height="420dp"
         android:layout_marginStart="15dp"
         android:layout_marginTop="20dp"
         android:layout_marginEnd="@dimen/standard_space_between_elements"
@@ -27,11 +27,11 @@
         android:layout_marginStart="@dimen/standard_space_between_elements"
         android:layout_marginTop="@dimen/standard_space_between_elements"
         android:layout_marginEnd="@dimen/standard_space_between_elements"
-        android:layout_marginBottom="39dp"
+        android:layout_marginBottom="7dp"
         android:hint="@string/multimedia_title_hint"
         app:counterEnabled="true"
         app:counterMaxLength="30"
-        app:layout_constraintBottom_toTopOf="@+id/edit_photo_button"
+        app:layout_constraintBottom_toTopOf="@+id/outlinedTagTextField"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/file_preview">
@@ -46,40 +46,113 @@
 
     </com.google.android.material.textfield.TextInputLayout>
 
+    <com.google.android.material.textfield.TextInputLayout
+        android:id="@+id/outlinedTagTextField"
+        style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="15dp"
+        android:layout_marginTop="7dp"
+        android:layout_marginEnd="8dp"
+        android:hint="@string/multimedia_tag_hint"
+        app:layout_constraintEnd_toStartOf="@+id/add_tag_button"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/outlinedTextField">
+
+        <com.google.android.material.textfield.TextInputEditText
+            android:id="@+id/tag_text_input"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:inputType="text"
+            android:maxLength="20"
+            android:maxLines="1" />
+
+    </com.google.android.material.textfield.TextInputLayout>
+
     <Button
         android:id="@+id/set_title_button"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:layout_marginStart="@dimen/standard_space_between_elements"
-        android:layout_marginTop="@dimen/standard_space_between_elements"
         android:layout_marginEnd="@dimen/standard_space_between_elements"
         android:layout_marginBottom="@dimen/extra_space_between_elements"
         android:text="@string/add_file_text"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/edit_photo_button" />
+        app:layout_constraintStart_toEndOf="@+id/cropImageButton" />
 
     <Button
         android:id="@+id/edit_photo_button"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_marginStart="@dimen/standard_space_between_elements"
-        android:layout_marginTop="39dp"
+        android:layout_marginBottom="20dp"
         android:text="@string/edit_photo_text"
+        app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toStartOf="@+id/cropImageButton"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/outlinedTextField" />
+        app:layout_constraintStart_toStartOf="parent" />
 
     <Button
         android:id="@+id/cropImageButton"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:layout_marginStart="1dp"
-        android:layout_marginTop="39dp"
-        android:layout_marginEnd="@dimen/standard_space_between_elements"
+        android:layout_marginBottom="20dp"
         android:text="@string/crop_photo_text"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toStartOf="@+id/set_title_button"
+        app:layout_constraintStart_toEndOf="@+id/edit_photo_button" />
+
+    <Button
+        android:id="@+id/add_tag_button"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="8dp"
+        android:layout_marginTop="16dp"
+        android:layout_marginEnd="15dp"
+        android:text="@string/add_text"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toEndOf="@+id/edit_photo_button"
+        app:layout_constraintStart_toEndOf="@+id/outlinedTagTextField"
         app:layout_constraintTop_toBottomOf="@+id/outlinedTextField" />
+
+    <HorizontalScrollView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="15dp"
+        android:layout_marginTop="10dp"
+        android:layout_marginEnd="15dp"
+        app:layout_constraintBottom_toTopOf="@+id/set_title_button"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/outlinedTagTextField">
+        <com.google.android.material.chip.ChipGroup
+            android:id="@+id/tag_group"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content">
+
+            <com.google.android.material.chip.Chip
+                android:id="@+id/chip_1"
+                style="@style/Widget.MaterialComponents.Chip.Entry"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:visibility="gone"
+                tools:text="Tag1" />
+
+            <com.google.android.material.chip.Chip
+                android:id="@+id/chip_2"
+                style="@style/Widget.MaterialComponents.Chip.Entry"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:visibility="gone"
+                tools:text="Tag2" />
+
+            <com.google.android.material.chip.Chip
+                android:id="@+id/chip_3"
+                style="@style/Widget.MaterialComponents.Chip.Entry"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:visibility="gone"
+                tools:text="Tag3" />
+
+        </com.google.android.material.chip.ChipGroup>
+    </HorizontalScrollView>
+
 </androidx.constraintlayout.widget.ConstraintLayout>

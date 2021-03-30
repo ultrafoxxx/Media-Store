@@ -28,9 +28,14 @@ import com.holzhausen.mediastore.adapters.MediaItemAdapter;
 import com.holzhausen.mediastore.application.MediaStoreApp;
 import com.holzhausen.mediastore.callbacks.SwipeDeleteItemCallback;
 import com.holzhausen.mediastore.daos.MultimediaItemDao;
+import com.holzhausen.mediastore.daos.MultimediaItemTagCrossRefDao;
+import com.holzhausen.mediastore.daos.TagDao;
 import com.holzhausen.mediastore.databases.IDBHelper;
 import com.holzhausen.mediastore.model.MultimediaItem;
+import com.holzhausen.mediastore.model.MultimediaItemTagCrossRef;
+import com.holzhausen.mediastore.model.MultimediaItemsTags;
 import com.holzhausen.mediastore.model.MultimediaType;
+import com.holzhausen.mediastore.model.Tag;
 import com.holzhausen.mediastore.util.IAdapterHelper;
 import com.holzhausen.mediastore.util.ImageHelper;
 import com.nambimobile.widgets.efab.FabOption;
@@ -45,6 +50,7 @@ import java.io.InputStream;
 import java.net.URI;
 import java.nio.file.Files;
 import java.text.SimpleDateFormat;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.LinkedList;
 import java.util.List;
@@ -70,13 +76,17 @@ public class MainActivity extends AppCompatActivity implements IAdapterHelper<Mu
 
     private static final int NAME_IMAGE_FROM_GALLERY_REQUEST_CODE = 4;
 
-    private PublishSubject<List<MultimediaItem>> multimediaItemsSubject;
+    private PublishSubject<List<MultimediaItemsTags>> multimediaItemsSubject;
 
     private MediaItemAdapter mediaItemAdapter;
 
     private CompositeDisposable compositeDisposable;
 
     private MultimediaItemDao multimediaItemDao;
+
+    private TagDao tagDao;
+
+    private MultimediaItemTagCrossRefDao multimediaItemTagCrossRefDao;
 
     private String temporaryFileName;
 
@@ -123,6 +133,14 @@ public class MainActivity extends AppCompatActivity implements IAdapterHelper<Mu
                 .getDatabase()
                 .multimediaItemDao();
 
+        tagDao = ((MediaStoreApp)getApplication())
+                .getDatabase()
+                .tagDao();
+
+        multimediaItemTagCrossRefDao = ((MediaStoreApp)getApplication())
+                .getDatabase()
+                .multimediaItemTagCrossRefDao();
+
         compositeDisposable = new CompositeDisposable();
 
         queryMultimediaItems(multimediaItemDao.getAll());
@@ -143,12 +161,16 @@ public class MainActivity extends AppCompatActivity implements IAdapterHelper<Mu
         else if(requestCode == NAME_IMAGE_REQUEST_CODE && resultCode == RESULT_OK && data != null) {
             final String fileName = data.getStringExtra("fileTitle");
             final String filePath = data.getStringExtra("fileName");
+            final String[] fileTags = data.getStringArrayExtra("fileTags");
             if(filePath != null){
                 temporaryFileName = filePath;
             }
             final MultimediaItem multimediaItem = new MultimediaItem(fileName, temporaryFileName,
                     MultimediaType.IMAGE, false);
             insertItem(multimediaItem);
+            if(fileTags != null && fileTags.length > 0) {
+                addTags(fileTags, multimediaItem);
+            }
         }
         else if(requestCode == GALLERY_IMAGE_REQUEST_CODE && resultCode == RESULT_OK && data != null) {
             final Uri uri = data.getData();
@@ -160,6 +182,8 @@ public class MainActivity extends AppCompatActivity implements IAdapterHelper<Mu
             final String fileName = data.getStringExtra("fileTitle");
             final Uri uri = (Uri) data.getExtras().get("uri");
             final String name = data.getStringExtra("fileName");
+            final String[] fileTags = data.getStringArrayExtra("fileTags");
+
             File image;
             if(name != null) {
                 image = getFileStreamPath(name);
@@ -169,6 +193,9 @@ public class MainActivity extends AppCompatActivity implements IAdapterHelper<Mu
             final MultimediaItem multimediaItem = new MultimediaItem(fileName, image.getName(),
                     MultimediaType.IMAGE, false);
             insertItem(multimediaItem);
+            if(fileTags != null && fileTags.length > 0) {
+                addTags(fileTags, multimediaItem);
+            }
         }
     }
 
@@ -224,6 +251,12 @@ public class MainActivity extends AppCompatActivity implements IAdapterHelper<Mu
                 .subscribe(() -> {
                     mediaItemAdapter.setDeletedItemToNull();
                     deleteMediaFile(multimediaItem.getFilePath());
+                    final Disposable internalDisposable = multimediaItemTagCrossRefDao
+                            .delete(multimediaItem.getFileName())
+                            .subscribeOn(Schedulers.io())
+                            .observeOn(AndroidSchedulers.mainThread())
+                            .subscribe();
+                    compositeDisposable.add(internalDisposable);
                 });
         compositeDisposable.add(disposable);
     }
@@ -299,13 +332,13 @@ public class MainActivity extends AppCompatActivity implements IAdapterHelper<Mu
 
     }
 
-    private void onSortClicked(Flowable<List<MultimediaItem>> multimediaItems) {
+    private void onSortClicked(Flowable<List<MultimediaItemsTags>> multimediaItems) {
         compositeDisposable.dispose();
         compositeDisposable = new CompositeDisposable();
         queryMultimediaItems(multimediaItems);
     }
 
-    private void queryMultimediaItems(Flowable<List<MultimediaItem>> multimediaItems) {
+    private void queryMultimediaItems(Flowable<List<MultimediaItemsTags>> multimediaItems) {
         Disposable disposable = multimediaItems
                 .subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
@@ -316,6 +349,30 @@ public class MainActivity extends AppCompatActivity implements IAdapterHelper<Mu
                     Toast.makeText(this, "Something went wrong", Toast.LENGTH_SHORT).show();
                 });
         compositeDisposable.add(disposable);
+    }
+
+    private void addTags(String[] tagNames, MultimediaItem newItem){
+
+        Tag[] tags = Arrays.stream(tagNames).map(Tag::new).toArray(Tag[]::new);
+        MultimediaItemTagCrossRef[] crossRefs = Arrays.stream(tagNames)
+                .map(tagName -> new MultimediaItemTagCrossRef(newItem.getFileName(), tagName))
+                .toArray(MultimediaItemTagCrossRef[]::new);
+
+        final Disposable disposable = tagDao
+                .insert(tags)
+                .subscribeOn(Schedulers.io())
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe(() -> {
+                    final Disposable internalDisposable = multimediaItemTagCrossRefDao
+                            .insert(crossRefs)
+                            .subscribeOn(Schedulers.io())
+                            .observeOn(AndroidSchedulers.mainThread())
+                            .subscribe();
+                    compositeDisposable.add(internalDisposable);
+
+        });
+        compositeDisposable.add(disposable);
+
     }
 
 
