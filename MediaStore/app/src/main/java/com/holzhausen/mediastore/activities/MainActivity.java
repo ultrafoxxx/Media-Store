@@ -8,6 +8,7 @@ import androidx.recyclerview.widget.ItemTouchHelper;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import android.app.SearchManager;
 import android.content.Context;
 import android.content.Intent;
 import android.graphics.Bitmap;
@@ -20,6 +21,7 @@ import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
+import android.widget.SearchView;
 import android.widget.Toast;
 
 import com.google.android.material.snackbar.Snackbar;
@@ -203,6 +205,47 @@ public class MainActivity extends AppCompatActivity implements IAdapterHelper<Mu
     public boolean onCreateOptionsMenu(Menu menu) {
         MenuInflater menuInflater = getMenuInflater();
         menuInflater.inflate(R.menu.sort_menu, menu);
+
+        SearchView searchView =
+                (SearchView) menu.findItem(R.id.search).getActionView();
+        searchView.setOnQueryTextListener(new SearchView.OnQueryTextListener() {
+            @Override
+            public boolean onQueryTextSubmit(String query) {
+                compositeDisposable.dispose();
+                compositeDisposable = new CompositeDisposable();
+                Flowable<List<MultimediaItemsTags>> multimediaItems = query.isEmpty() ?
+                        multimediaItemDao.getAll() : multimediaItemDao.queryItemsByNamesAndTags(query);
+                Disposable disposable = multimediaItems
+                        .subscribeOn(Schedulers.io())
+                        .observeOn(AndroidSchedulers.mainThread())
+                        .subscribe(result -> {
+                            multimediaItemsSubject.onNext(result);
+                        });
+                compositeDisposable.add(disposable);
+                return true;
+            }
+
+            @Override
+            public boolean onQueryTextChange(String newText) {
+                return false;
+            }
+        });
+        searchView.setOnQueryTextFocusChangeListener((view, hasFocus) -> {
+            if(hasFocus){
+                return;
+            }
+            compositeDisposable.dispose();
+            compositeDisposable = new CompositeDisposable();
+            Disposable disposable = multimediaItemDao
+                    .getAll()
+                    .subscribeOn(Schedulers.io())
+                    .observeOn(AndroidSchedulers.mainThread())
+                    .subscribe(result -> {
+                        multimediaItemsSubject.onNext(result);
+                    });
+            compositeDisposable.add(disposable);
+        });
+
         return true;
     }
 

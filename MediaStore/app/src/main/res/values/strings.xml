@@ -10,6 +10,8 @@
     <string name="crop_photo_text">Crop</string>
     <string name="multimedia_tag_hint">Provide max 3 names of tags</string>
     <string name="add_text">Add</string>
+    <string name="search_title">Search</string>
+    <string name="search_hint">Filter by name or tags</string>
     <string-array name="filters_array">
         <item>Documentary</item>
         <item>Vignette</item>

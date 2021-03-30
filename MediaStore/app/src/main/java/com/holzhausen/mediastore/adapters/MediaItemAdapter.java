@@ -126,9 +126,14 @@ public class MediaItemAdapter extends RecyclerView.Adapter<MediaItemAdapter.View
                 .setText(new SimpleDateFormat("dd-MM-yyyy HH:mm:ss", Locale.GERMANY)
                 .format(multimediaItems.get(position).getMultimediaItem().getCreationDate()));
         List<Tag> tags = multimediaItems.get(position).getTags();
-        for (int i=0;i<tags.size();i++) {
-            holder.getItemTagsChips()[i].setText(tags.get(i).getTagName());
-            holder.getItemTagsChips()[i].setVisibility(View.VISIBLE);
+        for (int i=0;i<holder.getItemTagsChips().length;i++) {
+            if(i<tags.size()){
+                holder.getItemTagsChips()[i].setText(tags.get(i).getTagName());
+                holder.getItemTagsChips()[i].setVisibility(View.VISIBLE);
+            }
+            else {
+                holder.getItemTagsChips()[i].setVisibility(View.GONE);
+            }
         }
     }
 

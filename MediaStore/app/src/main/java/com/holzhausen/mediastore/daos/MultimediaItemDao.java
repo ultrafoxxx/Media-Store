@@ -50,9 +50,11 @@ public interface MultimediaItemDao {
 
     @Transaction
     @Query("SELECT *" +
-            "FROM MultimediaItem M JOIN MultimediaItemTagCrossRefFTS MFTS " +
-            "ON M.fileName=MFTS.fileName " +
-            "WHERE MultimediaItemTagCrossRefFTS MATCH :query")
+            "FROM MultimediaItem M " +
+            "WHERE M.fileName IN (SELECT MM.fileName " +
+            "            FROM MultimediaItem MM JOIN MultimediaItemTagCrossRefFTS MFTS" +
+            "            ON MM.fileName=MFTS.fileName" +
+            "            WHERE MultimediaItemTagCrossRefFTS MATCH :query)")
     Flowable<List<MultimediaItemsTags>> queryItemsByNamesAndTags(String query);
 
     @Query("SELECT COUNT(*) FROM MultimediaItem WHERE fileName=:fileName")
