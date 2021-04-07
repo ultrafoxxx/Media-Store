@@ -5,13 +5,16 @@
     <application
         android:name=".application.MediaStoreApp"
         android:allowBackup="true"
+        android:fullBackupContent="false"
         android:icon="@mipmap/ic_launcher"
         android:label="@string/app_name"
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
-        android:theme="@style/Theme.MediaStore"
-        android:fullBackupContent="false">
-        <activity android:name=".activities.CropPhotoActivity"></activity>
+        android:theme="@style/Theme.MediaStore">
+        <activity android:name=".activities.PlayActivity"
+            android:screenOrientation="landscape"/>
+        <activity android:name=".activities.AudioRecordingActivity" />
+        <activity android:name=".activities.CropPhotoActivity" />
         <activity android:name=".activities.EditPhotoActivity" />
         <activity android:name=".activities.NameNewFileActivity" />
         <activity android:name=".activities.MainActivity">
@@ -20,7 +23,9 @@
 
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
-            <meta-data android:name="android.app.searchable"
+
+            <meta-data
+                android:name="android.app.searchable"
                 android:resource="@xml/searchable" />
         </activity>
 
@@ -38,6 +43,7 @@
     <uses-feature
         android:name="android.hardware.camera"
         android:required="true" />
+    <uses-permission android:name="android.permission.RECORD_AUDIO" />
 
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
 

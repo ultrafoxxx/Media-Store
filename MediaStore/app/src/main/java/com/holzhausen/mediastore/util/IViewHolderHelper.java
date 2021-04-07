@@ -4,7 +4,7 @@ public interface IViewHolderHelper {
 
     void updateLikeStatus(int position);
 
-    void viewImage(int position);
+    void viewFile(int position);
 
 
 }

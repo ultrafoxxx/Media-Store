@@ -53,4 +53,15 @@ public class ImageHelper {
         );
     }
 
+    public static File createRecordingFile(Context context) throws IOException {
+        String timeStamp = new SimpleDateFormat("yyyyMMdd_HHmmss", Locale.GERMANY).format(new Date());
+        String imageFileName = "Photo_" + timeStamp + "_";
+        File storageDir = context.getFilesDir();
+        return File.createTempFile(
+                imageFileName,  /* prefix */
+                ".mp4",         /* suffix */
+                storageDir      /* directory */
+        );
+    }
+
 }

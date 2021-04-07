@@ -2,11 +2,13 @@ package com.holzhausen.mediastore.activities;
 
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.content.ContextCompat;
 import androidx.core.content.FileProvider;
 
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.media.MediaMetadataRetriever;
 import android.net.Uri;
 import android.os.Bundle;
 import android.provider.MediaStore;
@@ -57,9 +59,13 @@ public class NameNewFileActivity extends AppCompatActivity {
 
     private List<String> tagNames;
 
-    private final static int EDIT_PHOTO_REQUEST_CODE = 6;
+    private final static int EDIT_PHOTO_REQUEST_CODE = 9;
 
-    private final static int CROP_PHOTO_REQUEST_CODE = 7;
+    private final static int CROP_PHOTO_REQUEST_CODE = 10;
+
+    private static final int NAME_VIDEO_REQUEST_CODE = 7;
+
+    private static final int NAME_VOICE_REQUEST_CODE = 8;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -82,7 +88,16 @@ public class NameNewFileActivity extends AppCompatActivity {
 
         }
         else if(uri != null){
-            imagePreview.setImageURI(uri);
+            int requestCode = getIntent().getIntExtra("requestCode", 0);
+            if(requestCode == NAME_VIDEO_REQUEST_CODE){
+                setImageViewForVideo(uri);
+            }
+            else if(requestCode == NAME_VOICE_REQUEST_CODE) {
+                imagePreview.setImageDrawable(ContextCompat.getDrawable(this, R.drawable.ic_baseline_music_video_24));
+            }
+            else {
+                imagePreview.setImageURI(uri);
+            }
         }
         originalUri = uri;
         final EditText titleInput = findViewById(R.id.title_text_input);
@@ -152,9 +167,9 @@ public class NameNewFileActivity extends AppCompatActivity {
         final EditText tagInput = findViewById(R.id.tag_text_input);
         final Button addTagButton = findViewById(R.id.add_tag_button);
         final Chip[] tagChips = {
-                (Chip) findViewById(R.id.chip_1),
-                (Chip) findViewById(R.id.chip_2),
-                (Chip) findViewById(R.id.chip_3)
+                findViewById(R.id.chip_1),
+                findViewById(R.id.chip_2),
+                findViewById(R.id.chip_3)
         };
         tagNames = new ArrayList<>();
         addTagButton.setOnClickListener(view -> {
@@ -186,6 +201,12 @@ public class NameNewFileActivity extends AppCompatActivity {
             });
         }
 
+        boolean isImage = getIntent().getBooleanExtra("isImage", true);
+        if(!isImage){
+            editImageButton.setVisibility(View.INVISIBLE);
+            cropImageButton.setVisibility(View.INVISIBLE);
+        }
+
     }
 
     @Override
@@ -207,7 +228,7 @@ public class NameNewFileActivity extends AppCompatActivity {
             File image = new File(getFilesDir(), fileName);
             image.delete();
         }
-        else if(properlyFinishedActivity && !originalFileName.equals(fileName)) {
+        else if(properlyFinishedActivity && originalFileName!= null && !originalFileName.equals(fileName)) {
             File image = new File(getFilesDir(), originalFileName);
             image.delete();
         }
@@ -224,6 +245,13 @@ public class NameNewFileActivity extends AppCompatActivity {
             e.printStackTrace();
             Toast.makeText(this, "Something went wrong", Toast.LENGTH_SHORT).show();
         }
+    }
+
+    private void setImageViewForVideo(Uri uri){
+        MediaMetadataRetriever retriever = new MediaMetadataRetriever();
+        retriever.setDataSource(this, uri);
+        Bitmap bitmap = retriever.getFrameAtTime();
+        imagePreview.setImageBitmap(bitmap);
     }
 
 }

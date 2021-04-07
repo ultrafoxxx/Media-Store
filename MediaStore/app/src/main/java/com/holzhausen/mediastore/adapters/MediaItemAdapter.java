@@ -1,10 +1,8 @@
 package com.holzhausen.mediastore.adapters;
 
-import android.content.Intent;
 import android.graphics.Bitmap;
-import android.graphics.drawable.Drawable;
+import android.media.MediaMetadataRetriever;
 import android.net.Uri;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -12,6 +10,7 @@ import android.widget.ImageView;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
+import androidx.core.content.ContextCompat;
 import androidx.core.content.FileProvider;
 import androidx.recyclerview.widget.RecyclerView;
 
@@ -19,7 +18,6 @@ import com.google.android.material.chip.Chip;
 import com.google.android.material.snackbar.Snackbar;
 import com.holzhausen.mediastore.R;
 import com.holzhausen.mediastore.callbacks.DeleteItemSnackBarCallback;
-import com.holzhausen.mediastore.databases.IDBHelper;
 import com.holzhausen.mediastore.model.MultimediaItem;
 import com.holzhausen.mediastore.model.MultimediaItemsTags;
 import com.holzhausen.mediastore.model.MultimediaType;
@@ -29,18 +27,12 @@ import com.holzhausen.mediastore.util.IViewHolderHelper;
 import com.holzhausen.mediastore.util.ImageHelper;
 
 import java.io.File;
-import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.AbstractMap;
-import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import java.util.Observable;
-import java.util.Observer;
-import java.util.function.Consumer;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -96,8 +88,9 @@ public class MediaItemAdapter extends RecyclerView.Adapter<MediaItemAdapter.View
 
     @Override
     public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
-        final Bitmap preview = helper.readBitmapFromFile(multimediaItems.get(position).getMultimediaItem().getFilePath());
-        if(preview != null) {
+        MultimediaType type = multimediaItems.get(position).getMultimediaItem().getMultimediaType();
+        if(type == MultimediaType.IMAGE) {
+            Bitmap preview = helper.readBitmapFromFile(multimediaItems.get(position).getMultimediaItem().getFilePath());
             holder.getPreview().setImageBitmap(preview);
             File imageFile = helper
                     .getContext()
@@ -108,6 +101,17 @@ public class MediaItemAdapter extends RecyclerView.Adapter<MediaItemAdapter.View
                     .getPreview()
                     .setRotation(ImageHelper
                             .getImageOrientation(helper.getContext(), imageUri, imageFile.getAbsolutePath()));
+        }
+        else if (type == MultimediaType.VOICE_RECORDING) {
+            holder.getPreview().setImageDrawable(ContextCompat.getDrawable(helper.getContext(), R.drawable.ic_baseline_music_video_24));
+        }
+        else if (type == MultimediaType.VIDEO) {
+            File videoFile = helper
+                    .getContext()
+                    .getFileStreamPath(multimediaItems.get(position).getMultimediaItem().getFilePath());
+            Uri videoUri = FileProvider.getUriForFile(helper.getContext(), ImageHelper.FILE_PROVIDER_ACCESS,
+                    videoFile);
+            setImageViewForVideo(videoUri, holder.getPreview());
         }
         holder
                 .getMultimediaTypeIcon()
@@ -181,9 +185,22 @@ public class MediaItemAdapter extends RecyclerView.Adapter<MediaItemAdapter.View
     }
 
     @Override
-    public void viewImage(int position) {
+    public void viewFile(int position) {
         MultimediaItem multimediaItem = multimediaItems.get(position).getMultimediaItem();
-        helper.viewImage(multimediaItem.getFilePath());
+        if(multimediaItem.getMultimediaType() == MultimediaType.IMAGE) {
+            helper.viewImage(multimediaItem.getFilePath());
+        }
+        else {
+            helper.playFile(multimediaItem.getFilePath());
+        }
+
+    }
+
+    private void setImageViewForVideo(Uri uri, ImageView imagePreview){
+        MediaMetadataRetriever retriever = new MediaMetadataRetriever();
+        retriever.setDataSource(helper.getContext(), uri);
+        Bitmap bitmap = retriever.getFrameAtTime();
+        imagePreview.setImageBitmap(bitmap);
     }
 
     public static class ViewHolder extends RecyclerView.ViewHolder implements View.OnClickListener{
@@ -250,7 +267,7 @@ public class MediaItemAdapter extends RecyclerView.Adapter<MediaItemAdapter.View
                 viewHolderHelper.updateLikeStatus(getAdapterPosition());
             }
             else if (v.getId() == preview.getId()) {
-                viewHolderHelper.viewImage(getAdapterPosition());
+                viewHolderHelper.viewFile(getAdapterPosition());
             }
         }
     }

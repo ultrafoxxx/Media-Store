@@ -40,6 +40,10 @@ dependencies {
     testImplementation 'junit:junit:4.+'
     androidTestImplementation 'androidx.test.ext:junit:1.1.2'
     androidTestImplementation 'androidx.test.espresso:espresso-core:3.3.0'
+    implementation 'com.google.android.exoplayer:exoplayer:2.13.2'
+    implementation 'com.google.android.exoplayer:exoplayer-core:2.13.2'
+    implementation 'com.google.android.exoplayer:exoplayer-dash:2.13.2'
+    implementation 'com.google.android.exoplayer:exoplayer-ui:2.13.2'
     def room_version = "2.2.6"
 
     implementation "androidx.room:room-runtime:$room_version"

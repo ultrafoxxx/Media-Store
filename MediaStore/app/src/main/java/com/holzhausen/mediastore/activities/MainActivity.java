@@ -78,6 +78,14 @@ public class MainActivity extends AppCompatActivity implements IAdapterHelper<Mu
 
     private static final int NAME_IMAGE_FROM_GALLERY_REQUEST_CODE = 4;
 
+    private static final int RECORD_VIDEO = 5;
+
+    private static final int RECORD_VOICE = 6;
+
+    private static final int NAME_VIDEO_REQUEST_CODE = 7;
+
+    private static final int NAME_VOICE_REQUEST_CODE = 8;
+
     private PublishSubject<List<MultimediaItemsTags>> multimediaItemsSubject;
 
     private MediaItemAdapter mediaItemAdapter;
@@ -129,6 +137,20 @@ public class MainActivity extends AppCompatActivity implements IAdapterHelper<Mu
             Intent intent = new Intent(Intent.ACTION_PICK);
             intent.setType("image/*");
             startActivityForResult(intent, GALLERY_IMAGE_REQUEST_CODE);
+        });
+
+        final FabOption videoOption = findViewById(R.id.new_video_option);
+        videoOption.setOnClickListener(view -> {
+            Intent takeVideoIntent = new Intent(MediaStore.ACTION_VIDEO_CAPTURE);
+            if (takeVideoIntent.resolveActivity(getPackageManager()) != null) {
+                startActivityForResult(takeVideoIntent, RECORD_VIDEO);
+            }
+        });
+
+        final FabOption voiceOption = findViewById(R.id.new_voice_option);
+        voiceOption.setOnClickListener(view -> {
+            Intent takeRecordingIntent = new Intent(this, AudioRecordingActivity.class);
+            startActivityForResult(takeRecordingIntent, RECORD_VOICE);
         });
 
         multimediaItemDao = ((MediaStoreApp)getApplication())
@@ -194,6 +216,49 @@ public class MainActivity extends AppCompatActivity implements IAdapterHelper<Mu
             }
             final MultimediaItem multimediaItem = new MultimediaItem(fileName, image.getName(),
                     MultimediaType.IMAGE, false);
+            insertItem(multimediaItem);
+            if(fileTags != null && fileTags.length > 0) {
+                addTags(fileTags, multimediaItem);
+            }
+        }
+        else if(requestCode == RECORD_VIDEO && resultCode == RESULT_OK && data != null) {
+            Uri videoUri = data.getData();
+            final Intent intent = new Intent(this, NameNewFileActivity.class);
+            intent.putExtra("fileUri", videoUri);
+            intent.putExtra("isImage", false);
+            intent.putExtra("requestCode", NAME_VIDEO_REQUEST_CODE);
+            startActivityForResult(intent, NAME_VIDEO_REQUEST_CODE);
+        }
+        else if(requestCode == RECORD_VOICE && resultCode == RESULT_OK && data != null) {
+            Uri recordingUri = data.getData();
+            temporaryFileName = data.getStringExtra("fileName");
+            final Intent intent = new Intent(this, NameNewFileActivity.class);
+            intent.putExtra("fileUri", recordingUri);
+            intent.putExtra("isImage", false);
+            intent.putExtra("requestCode", NAME_VOICE_REQUEST_CODE);
+            startActivityForResult(intent, NAME_VOICE_REQUEST_CODE);
+        }
+        else if(requestCode == NAME_VIDEO_REQUEST_CODE && resultCode == RESULT_OK && data != null) {
+            final String fileName = data.getStringExtra("fileTitle");
+            final Uri uri = (Uri) data.getExtras().get("uri");
+            final String[] fileTags = data.getStringArrayExtra("fileTags");
+            File video = copyFile(uri);
+
+            final MultimediaItem multimediaItem = new MultimediaItem(fileName, video.getName(),
+                    MultimediaType.VIDEO, false);
+            insertItem(multimediaItem);
+            if(fileTags != null && fileTags.length > 0) {
+                addTags(fileTags, multimediaItem);
+            }
+
+        }
+        else if(requestCode == NAME_VOICE_REQUEST_CODE && resultCode == RESULT_OK && data != null) {
+            final String fileName = data.getStringExtra("fileTitle");
+            final String[] fileTags = data.getStringArrayExtra("fileTags");
+            File recording = getFileStreamPath(temporaryFileName);
+
+            final MultimediaItem multimediaItem = new MultimediaItem(fileName, recording.getName(),
+                    MultimediaType.VOICE_RECORDING, false);
             insertItem(multimediaItem);
             if(fileTags != null && fileTags.length > 0) {
                 addTags(fileTags, multimediaItem);
@@ -339,6 +404,14 @@ public class MainActivity extends AppCompatActivity implements IAdapterHelper<Mu
         intent.setDataAndType(imageUri, "image/*");
         intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
         intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION | Intent.FLAG_GRANT_WRITE_URI_PERMISSION);
+        startActivity(intent);
+    }
+
+    @Override
+    public void playFile(String fileName) {
+        Uri fileUri = getFileUri(fileName);
+        Intent intent = new Intent(this, PlayActivity.class);
+        intent.setData(fileUri);
         startActivity(intent);
     }
 

@@ -15,6 +15,8 @@ public interface IAdapterHelper<T> extends IDBHelper<T> {
 
     void viewImage(String fileName);
 
+    void playFile(String fileName);
+
     Context getContext();
 
 }

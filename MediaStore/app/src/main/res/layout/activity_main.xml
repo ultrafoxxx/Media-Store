@@ -46,6 +46,22 @@
             app:label_text="Shoot new photo"
             app:fab_icon="@drawable/ic_baseline_camera_alt_24"
             />
+        <com.nambimobile.widgets.efab.FabOption
+            android:id="@+id/new_video_option"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:fab_orientation="portrait"
+            app:label_text="Record new video"
+            app:fab_icon="@drawable/ic_baseline_videocam_24"
+            />
+        <com.nambimobile.widgets.efab.FabOption
+            android:id="@+id/new_voice_option"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:fab_orientation="portrait"
+            app:label_text="Record new recording"
+            app:fab_icon="@drawable/ic_baseline_keyboard_voice_24"
+            />
 
 
     </com.nambimobile.widgets.efab.ExpandableFabLayout>
