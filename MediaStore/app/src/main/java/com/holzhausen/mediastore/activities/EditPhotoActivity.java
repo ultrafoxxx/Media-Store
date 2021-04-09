@@ -10,10 +10,12 @@ import android.graphics.Matrix;
 import android.net.Uri;
 import android.opengl.GLSurfaceView;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
+import android.widget.ImageView;
 import android.widget.Spinner;
 
 import com.holzhausen.mediastore.R;
@@ -46,6 +48,7 @@ public class EditPhotoActivity extends AppCompatActivity implements AdapterView.
 
     private Bitmap resultImage;
 
+
     private Uri uri;
 
     private final static List<Filter> filters = Stream.of(
@@ -74,22 +77,13 @@ public class EditPhotoActivity extends AppCompatActivity implements AdapterView.
 
         editView = findViewById(R.id.imageToEdit);
         uri = (Uri) getIntent().getExtras().get("uri");
-        String fileName = getIntent().getExtras().getString("fileName");
         resultImage = getOriginalImage(uri);
-        if(fileName != null) {
-            Matrix matrix = new Matrix();
-            matrix.postRotate(ImageHelper.getImageOrientation(this, uri, fileName));
-            resultImage = Bitmap.createBitmap(resultImage, 0, 0, resultImage.getWidth(),
-                    resultImage.getHeight(), matrix, true);
-        }
         final Button editButton = findViewById(R.id.editButton);
         editButton.setOnClickListener(this::onEditClicked);
 
         photoFilter = new PhotoFilter(editView, bitmap -> {
             resultImage = bitmap;
-
         });
-        photoFilter.applyEffect(resultImage, new None());
     }
 
     private void onEditClicked(View view) {
@@ -122,6 +116,11 @@ public class EditPhotoActivity extends AppCompatActivity implements AdapterView.
     @Override
     public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
         resultImage = getOriginalImage(uri);
+        Matrix matrix = new Matrix();
+        final String fileName = getIntent().getExtras().getString("fileName");
+        matrix.postRotate(ImageHelper.getImageOrientation(this, uri, getFileStreamPath(fileName).getAbsolutePath()));
+        resultImage = Bitmap.createBitmap(resultImage, 0, 0, resultImage.getWidth(),
+                resultImage.getHeight(), matrix, true);
         photoFilter.applyEffect(resultImage, filters.get(position));
     }
 

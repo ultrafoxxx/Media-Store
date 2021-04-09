@@ -44,6 +44,7 @@ dependencies {
     implementation 'com.google.android.exoplayer:exoplayer-core:2.13.2'
     implementation 'com.google.android.exoplayer:exoplayer-dash:2.13.2'
     implementation 'com.google.android.exoplayer:exoplayer-ui:2.13.2'
+    implementation 'com.isseiaoki:simplecropview:1.1.8'
     def room_version = "2.2.6"
 
     implementation "androidx.room:room-runtime:$room_version"
