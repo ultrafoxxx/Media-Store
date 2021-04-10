@@ -158,6 +158,8 @@ public class MediaItemAdapter extends RecyclerView.Adapter<MediaItemAdapter.View
     public void removeItem(int position){
         deletedItemPosition = position;
         deletedItem = multimediaItems.get(position);
+        helper.closeDBConnection();
+        notifyItemRemoved(deletedItemPosition);
         showUndoSnackBar();
     }
 

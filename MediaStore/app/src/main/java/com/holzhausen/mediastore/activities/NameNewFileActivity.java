@@ -80,10 +80,6 @@ public class NameNewFileActivity extends AppCompatActivity {
             openImageByFileName(fileName);
             uri = FileProvider.getUriForFile(this, ImageHelper.FILE_PROVIDER_ACCESS,
                     getFileStreamPath(fileName));
-            imagePreview.setRotation(
-                    ImageHelper
-                            .getImageOrientation(this, uri,
-                                    getFileStreamPath(fileName).getAbsolutePath()));
             originalFileName = fileName;
 
         }
@@ -212,11 +208,14 @@ public class NameNewFileActivity extends AppCompatActivity {
     @Override
     protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
-        if((requestCode == EDIT_PHOTO_REQUEST_CODE || requestCode == CROP_PHOTO_REQUEST_CODE)
-                && resultCode == RESULT_OK) {
+        if(requestCode == EDIT_PHOTO_REQUEST_CODE && resultCode == RESULT_OK) {
             fileName = data.getStringExtra("fileName");
             uri = FileProvider.getUriForFile(this, ImageHelper.FILE_PROVIDER_ACCESS,
                     getFileStreamPath(fileName));
+            imagePreview.setImageURI(uri);
+        }
+        else if(requestCode == CROP_PHOTO_REQUEST_CODE && resultCode == RESULT_OK && data != null) {
+            uri = data.getData();
             imagePreview.setImageURI(uri);
         }
     }

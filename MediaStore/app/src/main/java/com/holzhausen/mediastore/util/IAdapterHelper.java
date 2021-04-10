@@ -6,6 +6,11 @@ import android.net.Uri;
 import android.view.View;
 
 import com.holzhausen.mediastore.databases.IDBHelper;
+import com.holzhausen.mediastore.model.MultimediaItemsTags;
+
+import java.util.List;
+
+import io.reactivex.Flowable;
 
 public interface IAdapterHelper<T> extends IDBHelper<T> {
 
@@ -18,5 +23,9 @@ public interface IAdapterHelper<T> extends IDBHelper<T> {
     void playFile(String fileName);
 
     Context getContext();
+
+    void closeDBConnection();
+
+    void queryMultimediaItems();
 
 }

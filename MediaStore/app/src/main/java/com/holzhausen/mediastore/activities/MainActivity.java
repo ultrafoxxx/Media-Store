@@ -13,6 +13,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.graphics.Matrix;
 import android.net.Uri;
 import android.os.Bundle;
 import android.provider.MediaStore;
@@ -21,6 +22,7 @@ import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
+import android.widget.AdapterView;
 import android.widget.SearchView;
 import android.widget.Toast;
 
@@ -49,6 +51,7 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.net.URI;
 import java.nio.file.Files;
 import java.text.SimpleDateFormat;
@@ -100,21 +103,31 @@ public class MainActivity extends AppCompatActivity implements IAdapterHelper<Mu
 
     private String temporaryFileName;
 
+    private Flowable<List<MultimediaItemsTags>> currentFlowable;
+
+    private RecyclerView recyclerView;
+
+    private FabOption photoOption;
+
+    private FabOption galleryOption;
+
+    private FabOption videoOption;
+
+    private FabOption voiceOption;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
         multimediaItemsSubject = PublishSubject.create();
-
-        RecyclerView recyclerView = findViewById(R.id.recyclerView);
+        assignViews();
         mediaItemAdapter = new MediaItemAdapter(multimediaItemsSubject
                 .toFlowable(BackpressureStrategy.BUFFER), this);
         recyclerView.setAdapter(mediaItemAdapter);
 
         recyclerView.setLayoutManager(new LinearLayoutManager(this));
 
-        final FabOption photoOption = findViewById(R.id.new_photo_option);
         photoOption.setOnClickListener(view -> {
             File image;
             try {
@@ -132,22 +145,19 @@ public class MainActivity extends AppCompatActivity implements IAdapterHelper<Mu
             startActivityForResult(intent, SHOOT_IMAGE_REQUEST_CODE);
         });
 
-        final FabOption galleryOption = findViewById(R.id.storage_option);
         galleryOption.setOnClickListener(view -> {
             Intent intent = new Intent(Intent.ACTION_PICK);
             intent.setType("image/*");
             startActivityForResult(intent, GALLERY_IMAGE_REQUEST_CODE);
         });
 
-        final FabOption videoOption = findViewById(R.id.new_video_option);
         videoOption.setOnClickListener(view -> {
             Intent takeVideoIntent = new Intent(MediaStore.ACTION_VIDEO_CAPTURE);
             if (takeVideoIntent.resolveActivity(getPackageManager()) != null) {
                 startActivityForResult(takeVideoIntent, RECORD_VIDEO);
             }
         });
-
-        final FabOption voiceOption = findViewById(R.id.new_voice_option);
+        
         voiceOption.setOnClickListener(view -> {
             Intent takeRecordingIntent = new Intent(this, AudioRecordingActivity.class);
             startActivityForResult(takeRecordingIntent, RECORD_VOICE);
@@ -179,6 +189,7 @@ public class MainActivity extends AppCompatActivity implements IAdapterHelper<Mu
         super.onActivityResult(requestCode, resultCode, data);
         if (requestCode == SHOOT_IMAGE_REQUEST_CODE && resultCode == RESULT_OK) {
             final Intent intent = new Intent(this, NameNewFileActivity.class);
+            fixRotation(getFileStreamPath(temporaryFileName));
             intent.putExtra("fileName", temporaryFileName);
             startActivityForResult(intent, NAME_IMAGE_REQUEST_CODE);
         }
@@ -420,6 +431,17 @@ public class MainActivity extends AppCompatActivity implements IAdapterHelper<Mu
         return this;
     }
 
+    @Override
+    public void closeDBConnection() {
+        compositeDisposable.dispose();
+        compositeDisposable = new CompositeDisposable();
+    }
+
+    @Override
+    public void queryMultimediaItems() {
+        queryMultimediaItems(currentFlowable);
+    }
+
     private Uri getFileUri(String fileName) {
         return FileProvider.getUriForFile(this, ImageHelper.FILE_PROVIDER_ACCESS,
                 getFileStreamPath(fileName));
@@ -455,6 +477,7 @@ public class MainActivity extends AppCompatActivity implements IAdapterHelper<Mu
     }
 
     private void queryMultimediaItems(Flowable<List<MultimediaItemsTags>> multimediaItems) {
+        currentFlowable = multimediaItems;
         Disposable disposable = multimediaItems
                 .subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
@@ -489,6 +512,45 @@ public class MainActivity extends AppCompatActivity implements IAdapterHelper<Mu
         });
         compositeDisposable.add(disposable);
 
+    }
+
+    private void fixRotation(File file) {
+
+        Uri uri = FileProvider.getUriForFile(this, ImageHelper.FILE_PROVIDER_ACCESS, file);
+        Bitmap image = getOriginalImage(uri);
+        Matrix matrix = new Matrix();
+        matrix.postRotate(ImageHelper.getImageOrientation(this, uri, file.getAbsolutePath()));
+        image = Bitmap.createBitmap(image, 0, 0, image.getWidth(),
+                image.getHeight(), matrix, true);
+
+        try {
+            OutputStream os = getContentResolver().openOutputStream(uri, "w");
+            image.compress(Bitmap.CompressFormat.PNG, 100, os);
+            os.close();
+        } catch (IOException e){
+            e.printStackTrace();
+        }
+
+    }
+
+    private Bitmap getOriginalImage(Uri uri) {
+        try {
+            InputStream inputStream = getContentResolver().openInputStream(uri);
+            Bitmap bitmap = BitmapFactory.decodeStream(inputStream);
+            inputStream.close();
+            return bitmap;
+        }catch (IOException e){
+            e.printStackTrace();
+            return null;
+        }
+    }
+
+    private void assignViews() {
+        recyclerView = findViewById(R.id.recyclerView);
+        photoOption = findViewById(R.id.new_photo_option);
+        galleryOption = findViewById(R.id.storage_option);
+        videoOption = findViewById(R.id.new_video_option);
+        voiceOption = findViewById(R.id.new_voice_option);
     }
 
 

@@ -116,11 +116,6 @@ public class EditPhotoActivity extends AppCompatActivity implements AdapterView.
     @Override
     public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
         resultImage = getOriginalImage(uri);
-        Matrix matrix = new Matrix();
-        final String fileName = getIntent().getExtras().getString("fileName");
-        matrix.postRotate(ImageHelper.getImageOrientation(this, uri, getFileStreamPath(fileName).getAbsolutePath()));
-        resultImage = Bitmap.createBitmap(resultImage, 0, 0, resultImage.getWidth(),
-                resultImage.getHeight(), matrix, true);
         photoFilter.applyEffect(resultImage, filters.get(position));
     }
 
