@@ -13,7 +13,7 @@ public class MultimediaItemsTags {
     private MultimediaItem multimediaItem;
 
     @Relation(
-            parentColumn = getString(R.string.file_name),
+            parentColumn = "fileName",
             entityColumn = "tagName",
             associateBy = @Junction(MultimediaItemTagCrossRef.class)
     )

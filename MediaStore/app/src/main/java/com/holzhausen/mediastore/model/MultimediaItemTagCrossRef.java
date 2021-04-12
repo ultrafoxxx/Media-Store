@@ -4,7 +4,7 @@ import androidx.annotation.NonNull;
 import androidx.room.Entity;
 import androidx.room.Fts4;
 
-@Entity(primaryKeys = {getString(R.string.file_name), "tagName"})
+@Entity(primaryKeys = {"fileName", "tagName"})
 public class MultimediaItemTagCrossRef {
 
     public MultimediaItemTagCrossRef(String fileName, String tagName) {
