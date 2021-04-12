@@ -8,7 +8,6 @@ import androidx.recyclerview.widget.ItemTouchHelper;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
-import android.app.SearchManager;
 import android.content.Context;
 import android.content.Intent;
 import android.graphics.Bitmap;
@@ -22,11 +21,9 @@ import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
-import android.widget.AdapterView;
 import android.widget.SearchView;
 import android.widget.Toast;
 
-import com.google.android.material.snackbar.Snackbar;
 import com.holzhausen.mediastore.R;
 import com.holzhausen.mediastore.adapters.MediaItemAdapter;
 import com.holzhausen.mediastore.application.MediaStoreApp;
@@ -34,7 +31,6 @@ import com.holzhausen.mediastore.callbacks.SwipeDeleteItemCallback;
 import com.holzhausen.mediastore.daos.MultimediaItemDao;
 import com.holzhausen.mediastore.daos.MultimediaItemTagCrossRefDao;
 import com.holzhausen.mediastore.daos.TagDao;
-import com.holzhausen.mediastore.databases.IDBHelper;
 import com.holzhausen.mediastore.model.MultimediaItem;
 import com.holzhausen.mediastore.model.MultimediaItemTagCrossRef;
 import com.holzhausen.mediastore.model.MultimediaItemsTags;
@@ -48,26 +44,17 @@ import org.apache.commons.io.FileUtils;
 
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.net.URI;
-import java.nio.file.Files;
-import java.text.SimpleDateFormat;
 import java.util.Arrays;
-import java.util.Date;
-import java.util.LinkedList;
 import java.util.List;
-import java.util.Locale;
 
 import io.reactivex.BackpressureStrategy;
 import io.reactivex.Flowable;
-import io.reactivex.Scheduler;
 import io.reactivex.android.schedulers.AndroidSchedulers;
 import io.reactivex.disposables.CompositeDisposable;
 import io.reactivex.disposables.Disposable;
-import io.reactivex.functions.Action;
 import io.reactivex.schedulers.Schedulers;
 import io.reactivex.subjects.PublishSubject;
 
@@ -121,48 +108,19 @@ public class MainActivity extends AppCompatActivity implements IAdapterHelper<Mu
         setContentView(R.layout.activity_main);
 
         multimediaItemsSubject = PublishSubject.create();
+
         assignViews();
-        mediaItemAdapter = new MediaItemAdapter(multimediaItemsSubject
-                .toFlowable(BackpressureStrategy.BUFFER), this);
-        recyclerView.setAdapter(mediaItemAdapter);
+        prepareRecyclerView();
+        assignListenersToViews();
+        getDaos();
 
-        recyclerView.setLayoutManager(new LinearLayoutManager(this));
+        compositeDisposable = new CompositeDisposable();
 
-        photoOption.setOnClickListener(view -> {
-            File image;
-            try {
-                image = ImageHelper.createImageFile(this);
-            } catch (IOException e){
-                e.printStackTrace();
-                Toast.makeText(this, "Something went wrong", Toast.LENGTH_SHORT).show();
-                return;
-            }
-            Uri imageUri = FileProvider.getUriForFile(this,
-                    ImageHelper.FILE_PROVIDER_ACCESS, image);
-            temporaryFileName = image.getName();
-            Intent intent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
-            intent.putExtra(MediaStore.EXTRA_OUTPUT, imageUri);
-            startActivityForResult(intent, SHOOT_IMAGE_REQUEST_CODE);
-        });
+        queryMultimediaItems(multimediaItemDao.getAll());
 
-        galleryOption.setOnClickListener(view -> {
-            Intent intent = new Intent(Intent.ACTION_PICK);
-            intent.setType("image/*");
-            startActivityForResult(intent, GALLERY_IMAGE_REQUEST_CODE);
-        });
+    }
 
-        videoOption.setOnClickListener(view -> {
-            Intent takeVideoIntent = new Intent(MediaStore.ACTION_VIDEO_CAPTURE);
-            if (takeVideoIntent.resolveActivity(getPackageManager()) != null) {
-                startActivityForResult(takeVideoIntent, RECORD_VIDEO);
-            }
-        });
-        
-        voiceOption.setOnClickListener(view -> {
-            Intent takeRecordingIntent = new Intent(this, AudioRecordingActivity.class);
-            startActivityForResult(takeRecordingIntent, RECORD_VOICE);
-        });
-
+    private void getDaos() {
         multimediaItemDao = ((MediaStoreApp)getApplication())
                 .getDatabase()
                 .multimediaItemDao();
@@ -174,106 +132,155 @@ public class MainActivity extends AppCompatActivity implements IAdapterHelper<Mu
         multimediaItemTagCrossRefDao = ((MediaStoreApp)getApplication())
                 .getDatabase()
                 .multimediaItemTagCrossRefDao();
+    }
 
-        compositeDisposable = new CompositeDisposable();
+    private void assignListenersToViews() {
+        photoOption.setOnClickListener(this::onShootPhotoClicked);
+        galleryOption.setOnClickListener(this::onGetFromGalleryClicked);
+        videoOption.setOnClickListener(this::onVideoRecordClicked);
+        voiceOption.setOnClickListener(this::onVoiceRecordClicked);
+    }
 
-        queryMultimediaItems(multimediaItemDao.getAll());
-
+    private void prepareRecyclerView() {
+        mediaItemAdapter = new MediaItemAdapter(multimediaItemsSubject
+                .toFlowable(BackpressureStrategy.BUFFER), this);
+        recyclerView.setAdapter(mediaItemAdapter);
+        recyclerView.setLayoutManager(new LinearLayoutManager(this));
         final ItemTouchHelper itemTouchHelper =
                 new ItemTouchHelper(new SwipeDeleteItemCallback(mediaItemAdapter));
         itemTouchHelper.attachToRecyclerView(recyclerView);
+    }
+
+    private void onVoiceRecordClicked(View view) {
+        Intent takeRecordingIntent = new Intent(this, AudioRecordingActivity.class);
+        startActivityForResult(takeRecordingIntent, RECORD_VOICE);
+    }
+
+    private void onVideoRecordClicked(View view) {
+        Intent takeVideoIntent = new Intent(MediaStore.ACTION_VIDEO_CAPTURE);
+        if (takeVideoIntent.resolveActivity(getPackageManager()) != null) {
+            startActivityForResult(takeVideoIntent, RECORD_VIDEO);
+        }
+    }
+
+    private void onGetFromGalleryClicked(View view) {
+        Intent intent = new Intent(Intent.ACTION_PICK);
+        intent.setType("image/*");
+        startActivityForResult(intent, GALLERY_IMAGE_REQUEST_CODE);
+    }
+
+    private void onShootPhotoClicked(View view) {
+        File image;
+        try {
+            image = ImageHelper.createImageFile(this);
+        } catch (IOException e){
+            e.printStackTrace();
+            Toast.makeText(this, "Something went wrong", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        Uri imageUri = FileProvider.getUriForFile(this,
+                ImageHelper.FILE_PROVIDER_ACCESS, image);
+        temporaryFileName = image.getName();
+        Intent intent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
+        intent.putExtra(MediaStore.EXTRA_OUTPUT, imageUri);
+        startActivityForResult(intent, SHOOT_IMAGE_REQUEST_CODE);
+    }
+
+    private void doAfterShootingPhoto(){
+        final Intent intent = new Intent(this, NameNewFileActivity.class);
+        fixRotation(getFileStreamPath(temporaryFileName));
+        intent.putExtra("fileName", temporaryFileName);
+        startActivityForResult(intent, NAME_IMAGE_REQUEST_CODE);
+    }
+
+    private void doAfterNamingPhoto(Intent data){
+        final String filePath = data.getStringExtra("fileName");
+        if(filePath != null){
+            temporaryFileName = filePath;
+        }
+        insertNewMultimediaItem(temporaryFileName, data, MultimediaType.IMAGE);
+    }
+
+    private void doAfterTakingImageFromGallery(Intent data){
+        final Uri uri = data.getData();
+        final Intent intent = new Intent(this, NameNewFileActivity.class);
+        intent.putExtra("fileUri", uri);
+        startActivityForResult(intent, NAME_IMAGE_FROM_GALLERY_REQUEST_CODE);
+    }
+
+    private void doAfterNamingImageFromGallery(Intent data) {
+        final Uri uri = (Uri) data.getExtras().get("uri");
+        final String name = data.getStringExtra("fileName");
+        File image;
+        if(name != null) {
+            image = getFileStreamPath(name);
+        } else {
+            image = copyFile(uri);
+        }
+        insertNewMultimediaItem(image.getName(), data, MultimediaType.IMAGE);
+    }
+
+    private void startNamingActivityForRecordingOrVideo(int requestCode, Intent data){
+        Uri uri = data.getData();
+        temporaryFileName = data.getStringExtra("fileName");
+        final Intent intent = new Intent(this, NameNewFileActivity.class);
+        intent.putExtra("fileUri", uri);
+        intent.putExtra("isImage", false);
+        intent.putExtra("requestCode", requestCode);
+        startActivityForResult(intent, requestCode);
+    }
+
+    private void doAfterNamingVideo(Intent data) {
+        final Uri uri = (Uri) data.getExtras().get("uri");
+        File video = copyFile(uri);
+        insertNewMultimediaItem(video.getName(), data, MultimediaType.VIDEO);
+    }
+
+    private void doAfterNamingRecording(Intent data) {
+        File recording = getFileStreamPath(temporaryFileName);
+        insertNewMultimediaItem(recording.getName(), data, MultimediaType.VOICE_RECORDING);
+    }
+
+    private void insertNewMultimediaItem(String fileName, Intent data, MultimediaType multimediaType){
+        final String fileTitle = data.getStringExtra("fileTitle");
+        final String[] fileTags = data.getStringArrayExtra("fileTags");
+
+        final MultimediaItem multimediaItem = new MultimediaItem(fileTitle, fileName,
+                multimediaType, false);
+        insertItem(multimediaItem);
+        if(fileTags != null && fileTags.length > 0) {
+            addTags(fileTags, multimediaItem);
+        }
+
     }
 
     @Override
     protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
         if (requestCode == SHOOT_IMAGE_REQUEST_CODE && resultCode == RESULT_OK) {
-            final Intent intent = new Intent(this, NameNewFileActivity.class);
-            fixRotation(getFileStreamPath(temporaryFileName));
-            intent.putExtra("fileName", temporaryFileName);
-            startActivityForResult(intent, NAME_IMAGE_REQUEST_CODE);
+            doAfterShootingPhoto();
         }
         else if(requestCode == NAME_IMAGE_REQUEST_CODE && resultCode == RESULT_OK && data != null) {
-            final String fileName = data.getStringExtra("fileTitle");
-            final String filePath = data.getStringExtra("fileName");
-            final String[] fileTags = data.getStringArrayExtra("fileTags");
-            if(filePath != null){
-                temporaryFileName = filePath;
-            }
-            final MultimediaItem multimediaItem = new MultimediaItem(fileName, temporaryFileName,
-                    MultimediaType.IMAGE, false);
-            insertItem(multimediaItem);
-            if(fileTags != null && fileTags.length > 0) {
-                addTags(fileTags, multimediaItem);
-            }
+            doAfterNamingPhoto(data);
         }
         else if(requestCode == GALLERY_IMAGE_REQUEST_CODE && resultCode == RESULT_OK && data != null) {
-            final Uri uri = data.getData();
-            final Intent intent = new Intent(this, NameNewFileActivity.class);
-            intent.putExtra("fileUri", uri);
-            startActivityForResult(intent, NAME_IMAGE_FROM_GALLERY_REQUEST_CODE);
+            doAfterTakingImageFromGallery(data);
         }
         else if(requestCode == NAME_IMAGE_FROM_GALLERY_REQUEST_CODE && resultCode == RESULT_OK && data != null) {
-            final String fileName = data.getStringExtra("fileTitle");
-            final Uri uri = (Uri) data.getExtras().get("uri");
-            final String name = data.getStringExtra("fileName");
-            final String[] fileTags = data.getStringArrayExtra("fileTags");
-
-            File image;
-            if(name != null) {
-                image = getFileStreamPath(name);
-            } else {
-                image = copyFile(uri);
-            }
-            final MultimediaItem multimediaItem = new MultimediaItem(fileName, image.getName(),
-                    MultimediaType.IMAGE, false);
-            insertItem(multimediaItem);
-            if(fileTags != null && fileTags.length > 0) {
-                addTags(fileTags, multimediaItem);
-            }
+            doAfterNamingImageFromGallery(data);
         }
         else if(requestCode == RECORD_VIDEO && resultCode == RESULT_OK && data != null) {
-            Uri videoUri = data.getData();
-            final Intent intent = new Intent(this, NameNewFileActivity.class);
-            intent.putExtra("fileUri", videoUri);
-            intent.putExtra("isImage", false);
-            intent.putExtra("requestCode", NAME_VIDEO_REQUEST_CODE);
-            startActivityForResult(intent, NAME_VIDEO_REQUEST_CODE);
+            startNamingActivityForRecordingOrVideo(NAME_VIDEO_REQUEST_CODE, data);
         }
         else if(requestCode == RECORD_VOICE && resultCode == RESULT_OK && data != null) {
-            Uri recordingUri = data.getData();
-            temporaryFileName = data.getStringExtra("fileName");
-            final Intent intent = new Intent(this, NameNewFileActivity.class);
-            intent.putExtra("fileUri", recordingUri);
-            intent.putExtra("isImage", false);
-            intent.putExtra("requestCode", NAME_VOICE_REQUEST_CODE);
-            startActivityForResult(intent, NAME_VOICE_REQUEST_CODE);
+            startNamingActivityForRecordingOrVideo(NAME_VOICE_REQUEST_CODE, data);
         }
         else if(requestCode == NAME_VIDEO_REQUEST_CODE && resultCode == RESULT_OK && data != null) {
-            final String fileName = data.getStringExtra("fileTitle");
-            final Uri uri = (Uri) data.getExtras().get("uri");
-            final String[] fileTags = data.getStringArrayExtra("fileTags");
-            File video = copyFile(uri);
-
-            final MultimediaItem multimediaItem = new MultimediaItem(fileName, video.getName(),
-                    MultimediaType.VIDEO, false);
-            insertItem(multimediaItem);
-            if(fileTags != null && fileTags.length > 0) {
-                addTags(fileTags, multimediaItem);
-            }
+            doAfterNamingVideo(data);
 
         }
         else if(requestCode == NAME_VOICE_REQUEST_CODE && resultCode == RESULT_OK && data != null) {
-            final String fileName = data.getStringExtra("fileTitle");
-            final String[] fileTags = data.getStringArrayExtra("fileTags");
-            File recording = getFileStreamPath(temporaryFileName);
-
-            final MultimediaItem multimediaItem = new MultimediaItem(fileName, recording.getName(),
-                    MultimediaType.VOICE_RECORDING, false);
-            insertItem(multimediaItem);
-            if(fileTags != null && fileTags.length > 0) {
-                addTags(fileTags, multimediaItem);
-            }
+            doAfterNamingRecording(data);
         }
     }
 
