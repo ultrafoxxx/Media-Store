@@ -13,11 +13,16 @@
         android:theme="@style/Theme.MediaStore">
         <activity android:name=".activities.PlayActivity"
             android:screenOrientation="landscape"/>
-        <activity android:name=".activities.AudioRecordingActivity" />
-        <activity android:name=".activities.CropPhotoActivity" />
-        <activity android:name=".activities.EditPhotoActivity" />
-        <activity android:name=".activities.NameNewFileActivity" />
-        <activity android:name=".activities.MainActivity">
+        <activity android:name=".activities.AudioRecordingActivity"
+            android:screenOrientation="portrait"/>
+        <activity android:name=".activities.CropPhotoActivity"
+            android:screenOrientation="portrait"/>
+        <activity android:name=".activities.EditPhotoActivity"
+            android:screenOrientation="portrait"/>
+        <activity android:name=".activities.NameNewFileActivity"
+            android:screenOrientation="portrait"/>
+        <activity android:name=".activities.MainActivity"
+            android:screenOrientation="portrait">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 

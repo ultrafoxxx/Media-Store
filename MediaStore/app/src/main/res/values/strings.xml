@@ -12,6 +12,20 @@
     <string name="add_text">Add</string>
     <string name="search_title">Search</string>
     <string name="search_hint">Filter by name or tags</string>
+    <string name="no_elements_info">There are no elements</string>
+    <string name="image_mime">image/*</string>
+    <string name="wrong_info">Something went wrong</string>
+    <string name="file_name">fileName</string>
+    <string name="file_uri">fileUri</string>
+    <string name="uri">uri</string>
+    <string name="is_image">isImage</string>
+    <string name="request_code">requestCode</string>
+    <string name="file_title">fileTitle</string>
+    <string name="file_tags">fileTags</string>
+    <string name="date_format">dd-MM-yyyy HH:mm:ss</string>
+    <string name="undo_question">Undo deleting item?</string>
+    <string name="undo_text">UNDO</string>
+    <string name="exists_warning">This file name already exists in database</string>
     <string-array name="filters_array">
         <item>Documentary</item>
         <item>Vignette</item>

@@ -4,6 +4,7 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.content.FileProvider;
+import androidx.recyclerview.widget.DividerItemDecoration;
 import androidx.recyclerview.widget.ItemTouchHelper;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
@@ -22,6 +23,7 @@ import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.SearchView;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import com.holzhausen.mediastore.R;
@@ -102,6 +104,10 @@ public class MainActivity extends AppCompatActivity implements IAdapterHelper<Mu
 
     private FabOption voiceOption;
 
+    private TextView noElementsInfoView;
+
+    private String currentQuery;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -146,6 +152,7 @@ public class MainActivity extends AppCompatActivity implements IAdapterHelper<Mu
                 .toFlowable(BackpressureStrategy.BUFFER), this);
         recyclerView.setAdapter(mediaItemAdapter);
         recyclerView.setLayoutManager(new LinearLayoutManager(this));
+        recyclerView.addItemDecoration(new DividerItemDecoration(this, DividerItemDecoration.VERTICAL));
         final ItemTouchHelper itemTouchHelper =
                 new ItemTouchHelper(new SwipeDeleteItemCallback(mediaItemAdapter));
         itemTouchHelper.attachToRecyclerView(recyclerView);
@@ -165,7 +172,7 @@ public class MainActivity extends AppCompatActivity implements IAdapterHelper<Mu
 
     private void onGetFromGalleryClicked(View view) {
         Intent intent = new Intent(Intent.ACTION_PICK);
-        intent.setType("image/*");
+        intent.setType(getString(R.string.image_mime));
         startActivityForResult(intent, GALLERY_IMAGE_REQUEST_CODE);
     }
 
@@ -175,7 +182,7 @@ public class MainActivity extends AppCompatActivity implements IAdapterHelper<Mu
             image = ImageHelper.createImageFile(this);
         } catch (IOException e){
             e.printStackTrace();
-            Toast.makeText(this, "Something went wrong", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, getString(R.string.wrong_info), Toast.LENGTH_SHORT).show();
             return;
         }
         Uri imageUri = FileProvider.getUriForFile(this,
@@ -189,12 +196,12 @@ public class MainActivity extends AppCompatActivity implements IAdapterHelper<Mu
     private void doAfterShootingPhoto(){
         final Intent intent = new Intent(this, NameNewFileActivity.class);
         fixRotation(getFileStreamPath(temporaryFileName));
-        intent.putExtra("fileName", temporaryFileName);
+        intent.putExtra(getString(R.string.file_name), temporaryFileName);
         startActivityForResult(intent, NAME_IMAGE_REQUEST_CODE);
     }
 
     private void doAfterNamingPhoto(Intent data){
-        final String filePath = data.getStringExtra("fileName");
+        final String filePath = data.getStringExtra(getString(R.string.file_name));
         if(filePath != null){
             temporaryFileName = filePath;
         }
@@ -204,13 +211,13 @@ public class MainActivity extends AppCompatActivity implements IAdapterHelper<Mu
     private void doAfterTakingImageFromGallery(Intent data){
         final Uri uri = data.getData();
         final Intent intent = new Intent(this, NameNewFileActivity.class);
-        intent.putExtra("fileUri", uri);
+        intent.putExtra(getString(R.string.file_uri), uri);
         startActivityForResult(intent, NAME_IMAGE_FROM_GALLERY_REQUEST_CODE);
     }
 
     private void doAfterNamingImageFromGallery(Intent data) {
-        final Uri uri = (Uri) data.getExtras().get("uri");
-        final String name = data.getStringExtra("fileName");
+        final Uri uri = (Uri) data.getExtras().get(getString(R.string.uri));
+        final String name = data.getStringExtra(getString(R.string.file_name));
         File image;
         if(name != null) {
             image = getFileStreamPath(name);
@@ -222,16 +229,16 @@ public class MainActivity extends AppCompatActivity implements IAdapterHelper<Mu
 
     private void startNamingActivityForRecordingOrVideo(int requestCode, Intent data){
         Uri uri = data.getData();
-        temporaryFileName = data.getStringExtra("fileName");
+        temporaryFileName = data.getStringExtra(getString(R.string.file_name));
         final Intent intent = new Intent(this, NameNewFileActivity.class);
-        intent.putExtra("fileUri", uri);
-        intent.putExtra("isImage", false);
-        intent.putExtra("requestCode", requestCode);
+        intent.putExtra(getString(R.string.file_uri), uri);
+        intent.putExtra(getString(R.string.is_image), false);
+        intent.putExtra(getString(R.string.request_code), requestCode);
         startActivityForResult(intent, requestCode);
     }
 
     private void doAfterNamingVideo(Intent data) {
-        final Uri uri = (Uri) data.getExtras().get("uri");
+        final Uri uri = (Uri) data.getExtras().get(getString(R.string.uri));
         File video = copyFile(uri);
         insertNewMultimediaItem(video.getName(), data, MultimediaType.VIDEO);
     }
@@ -242,8 +249,8 @@ public class MainActivity extends AppCompatActivity implements IAdapterHelper<Mu
     }
 
     private void insertNewMultimediaItem(String fileName, Intent data, MultimediaType multimediaType){
-        final String fileTitle = data.getStringExtra("fileTitle");
-        final String[] fileTags = data.getStringArrayExtra("fileTags");
+        final String fileTitle = data.getStringExtra(getString(R.string.file_title));
+        final String[] fileTags = data.getStringArrayExtra(getString(R.string.file_tags));
 
         final MultimediaItem multimediaItem = new MultimediaItem(fileTitle, fileName,
                 multimediaType, false);
@@ -305,6 +312,7 @@ public class MainActivity extends AppCompatActivity implements IAdapterHelper<Mu
                             multimediaItemsSubject.onNext(result);
                         });
                 compositeDisposable.add(disposable);
+                currentQuery = query;
                 return true;
             }
 
@@ -317,6 +325,7 @@ public class MainActivity extends AppCompatActivity implements IAdapterHelper<Mu
             if(hasFocus){
                 return;
             }
+            currentQuery = null;
             compositeDisposable.dispose();
             compositeDisposable = new CompositeDisposable();
             Disposable disposable = multimediaItemDao
@@ -338,8 +347,7 @@ public class MainActivity extends AppCompatActivity implements IAdapterHelper<Mu
         compositeDisposable.dispose();
     }
 
-    @Override
-    public boolean onOptionsItemSelected(@NonNull MenuItem item) {
+    private boolean onStandardOptionsItemSelected(MenuItem item) {
         switch (item.getItemId()) {
             case R.id.ascending_title:
                 onSortClicked(multimediaItemDao.getAllItemsSortedByTitleAsc());
@@ -353,9 +361,37 @@ public class MainActivity extends AppCompatActivity implements IAdapterHelper<Mu
             case R.id.descending_date:
                 onSortClicked(multimediaItemDao.getAllItemsSortedByCreationDateDesc());
                 return true;
-
         }
-        return true;
+        return false;
+    }
+
+    private boolean onOptionsItemSelectedInQueryMode(MenuItem item) {
+        switch (item.getItemId()) {
+            case R.id.ascending_title:
+                onSortClicked(multimediaItemDao.queryItemsByNamesAndTagsOrderByNameAsc(currentQuery));
+                return true;
+            case R.id.descending_title:
+                onSortClicked(multimediaItemDao.queryItemsByNamesAndTagsOrderByNameDesc(currentQuery));
+                return true;
+            case R.id.ascending_date:
+                onSortClicked(multimediaItemDao.queryItemsByNamesAndTagsOrderByDateAsc(currentQuery));
+                return true;
+            case R.id.descending_date:
+                onSortClicked(multimediaItemDao.queryItemsByNamesAndTagsOrderByDateDesc(currentQuery));
+                return true;
+        }
+        return false;
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(@NonNull MenuItem item) {
+
+        if(currentQuery == null) {
+            return onStandardOptionsItemSelected(item);
+        }
+        else {
+            return onOptionsItemSelectedInQueryMode(item);
+        }
     }
 
     @Override
@@ -419,7 +455,7 @@ public class MainActivity extends AppCompatActivity implements IAdapterHelper<Mu
     public void viewImage(String fileName) {
         Uri imageUri = getFileUri(fileName);
         Intent intent = new Intent(Intent.ACTION_VIEW);
-        intent.setDataAndType(imageUri, "image/*");
+        intent.setDataAndType(imageUri, getString(R.string.image_mime));
         intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
         intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION | Intent.FLAG_GRANT_WRITE_URI_PERMISSION);
         startActivity(intent);
@@ -490,9 +526,15 @@ public class MainActivity extends AppCompatActivity implements IAdapterHelper<Mu
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe(items -> {
                     multimediaItemsSubject.onNext(items);
+                    if(items.isEmpty()) {
+                        noElementsInfoView.setVisibility(View.VISIBLE);
+                    }
+                    else {
+                        noElementsInfoView.setVisibility(View.GONE);
+                    }
                 }, error -> {
                     error.printStackTrace();
-                    Toast.makeText(this, "Something went wrong", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(this, getString(R.string.wrong_info), Toast.LENGTH_SHORT).show();
                 });
         compositeDisposable.add(disposable);
     }
@@ -558,6 +600,7 @@ public class MainActivity extends AppCompatActivity implements IAdapterHelper<Mu
         galleryOption = findViewById(R.id.storage_option);
         videoOption = findViewById(R.id.new_video_option);
         voiceOption = findViewById(R.id.new_voice_option);
+        noElementsInfoView = findViewById(R.id.no_elements_info);
     }
 
 

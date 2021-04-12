@@ -10,8 +10,8 @@
         android:id="@+id/preview_image"
         android:layout_width="64dp"
         android:layout_height="64dp"
-        android:layout_marginStart="20dp"
-        android:layout_marginTop="20dp"
+        android:layout_marginStart="@dimen/extra_space_between_elements"
+        android:layout_marginTop="@dimen/extra_space_between_elements"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
         tools:srcCompat="@tools:sample/avatars" />
@@ -20,8 +20,8 @@
         android:id="@+id/multimedia_type"
         android:layout_width="20dp"
         android:layout_height="20dp"
-        android:layout_marginStart="20dp"
-        android:layout_marginTop="22dp"
+        android:layout_marginStart="@dimen/extra_space_between_elements"
+        android:layout_marginTop="@dimen/extra_space_between_elements"
         app:layout_constraintStart_toEndOf="@+id/preview_image"
         app:layout_constraintTop_toTopOf="parent"
         tools:srcCompat="@drawable/ic_outline_image_24" />
@@ -31,7 +31,7 @@
         android:layout_width="32dp"
         android:layout_height="32dp"
         android:layout_marginTop="36dp"
-        android:layout_marginEnd="20dp"
+        android:layout_marginEnd="@dimen/extra_space_between_elements"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintTop_toTopOf="parent"
         app:srcCompat="@drawable/ic_baseline_star_border_24" />
@@ -40,9 +40,9 @@
         android:id="@+id/multimedia_title"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:layout_marginStart="20dp"
-        android:layout_marginTop="20dp"
-        android:layout_marginEnd="10dp"
+        android:layout_marginStart="@dimen/extra_space_between_elements"
+        android:layout_marginTop="@dimen/extra_space_between_elements"
+        android:layout_marginEnd="@dimen/input_left_and_right_margin"
         android:textColor="@color/black"
         android:textSize="18sp"
         app:layout_constraintEnd_toStartOf="@+id/like_icon"
@@ -54,8 +54,8 @@
         android:id="@+id/multimedia_creation_date"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginStart="10dp"
-        android:layout_marginTop="20dp"
+        android:layout_marginStart="@dimen/input_left_and_right_margin"
+        android:layout_marginTop="@dimen/extra_space_between_elements"
         android:textSize="15sp"
         app:layout_constraintStart_toEndOf="@+id/multimedia_type"
         app:layout_constraintTop_toTopOf="parent"
@@ -64,9 +64,9 @@
     <HorizontalScrollView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginStart="15dp"
-        android:layout_marginTop="10dp"
-        android:layout_marginEnd="15dp"
+        android:layout_marginStart="@dimen/standard_space_between_elements"
+        android:layout_marginTop="@dimen/input_left_and_right_margin"
+        android:layout_marginEnd="@dimen/standard_space_between_elements"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/multimedia_title">
@@ -78,15 +78,15 @@
 
             <com.google.android.material.chip.Chip
                 android:id="@+id/item_chip_1"
-                style="@style/Widget.MaterialComponents.Chip.Entry"
+                style="@style/Widget.MaterialComponents.Chip.Action"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:visibility="gone"
+                android:visibility="invisible"
                 tools:text="Tag1" />
 
             <com.google.android.material.chip.Chip
                 android:id="@+id/item_chip_2"
-                style="@style/Widget.MaterialComponents.Chip.Entry"
+                style="@style/Widget.MaterialComponents.Chip.Action"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:visibility="gone"
@@ -94,7 +94,7 @@
 
             <com.google.android.material.chip.Chip
                 android:id="@+id/item_chip_3"
-                style="@style/Widget.MaterialComponents.Chip.Entry"
+                style="@style/Widget.MaterialComponents.Chip.Action"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:visibility="gone"

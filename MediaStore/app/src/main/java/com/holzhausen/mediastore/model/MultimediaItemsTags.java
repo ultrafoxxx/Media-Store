@@ -5,6 +5,7 @@ import androidx.room.Junction;
 import androidx.room.Relation;
 
 import java.util.List;
+import java.util.Objects;
 
 public class MultimediaItemsTags {
 
@@ -12,7 +13,7 @@ public class MultimediaItemsTags {
     private MultimediaItem multimediaItem;
 
     @Relation(
-            parentColumn = "fileName",
+            parentColumn = getString(R.string.file_name),
             entityColumn = "tagName",
             associateBy = @Junction(MultimediaItemTagCrossRef.class)
     )
@@ -32,5 +33,19 @@ public class MultimediaItemsTags {
 
     public void setTags(List<Tag> tags) {
         this.tags = tags;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        MultimediaItemsTags itemsTags = (MultimediaItemsTags) o;
+        return Objects.equals(multimediaItem, itemsTags.multimediaItem) &&
+                Objects.equals(tags, itemsTags.tags);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(multimediaItem, tags);
     }
 }

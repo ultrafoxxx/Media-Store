@@ -34,7 +34,7 @@ public class CropPhotoActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_crop_photo);
 
-        uri = (Uri) getIntent().getExtras().get("uri");
+        uri = (Uri) getIntent().getExtras().get(getString(R.string.uri));
 
         compositeDisposable = new CompositeDisposable();
 
@@ -71,6 +71,7 @@ public class CropPhotoActivity extends AppCompatActivity {
                     .subscribe(resultUri -> {
                         Intent intent = new Intent();
                         intent.setData(resultUri);
+                        intent.putExtra(getString(R.string.file_name), cropImage.getName());
                         setResult(RESULT_OK, intent);
                         finish();
                     }, Throwable::printStackTrace);

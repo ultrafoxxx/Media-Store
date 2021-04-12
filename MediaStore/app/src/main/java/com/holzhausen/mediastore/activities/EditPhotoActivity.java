@@ -76,7 +76,7 @@ public class EditPhotoActivity extends AppCompatActivity implements AdapterView.
         spinner.setOnItemSelectedListener(this);
 
         editView = findViewById(R.id.imageToEdit);
-        uri = (Uri) getIntent().getExtras().get("uri");
+        uri = (Uri) getIntent().getExtras().get(getString(R.string.uri));
         resultImage = getOriginalImage(uri);
         final Button editButton = findViewById(R.id.editButton);
         editButton.setOnClickListener(this::onEditClicked);
@@ -93,7 +93,7 @@ public class EditPhotoActivity extends AppCompatActivity implements AdapterView.
             resultImage.compress(Bitmap.CompressFormat.PNG, 100, outputStream);
             outputStream.close();
             Intent intent = new Intent();
-            intent.putExtra("fileName", image.getName());
+            intent.putExtra(getString(R.string.file_name), image.getName());
             setResult(RESULT_OK, intent);
             finish();
         } catch (IOException e) {

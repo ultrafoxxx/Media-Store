@@ -115,7 +115,7 @@ public class AudioRecordingActivity extends AppCompatActivity {
             mediaRecorder.stop();
             Intent intent = new Intent();
             intent.setData(FileProvider.getUriForFile(this, ImageHelper.FILE_PROVIDER_ACCESS, outputFile));
-            intent.putExtra("fileName", outputFile.getName());
+            intent.putExtra(getString(R.string.file_name), outputFile.getName());
             setResult(RESULT_OK, intent);
             finish();
         }

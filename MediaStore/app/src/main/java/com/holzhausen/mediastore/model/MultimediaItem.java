@@ -8,6 +8,7 @@ import androidx.room.Ignore;
 import androidx.room.PrimaryKey;
 
 import java.util.Date;
+import java.util.Objects;
 
 @Entity
 public class MultimediaItem {
@@ -64,5 +65,18 @@ public class MultimediaItem {
 
     public String getFilePath() {
         return filePath;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        MultimediaItem that = (MultimediaItem) o;
+        return fileName.equals(that.fileName);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(fileName);
     }
 }

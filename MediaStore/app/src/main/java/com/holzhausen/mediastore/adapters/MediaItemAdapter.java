@@ -127,7 +127,7 @@ public class MediaItemAdapter extends RecyclerView.Adapter<MediaItemAdapter.View
         holder.getMultimediaTitle().setText(multimediaItems.get(position).getMultimediaItem().getFileName());
         holder
                 .getMultimediaCreationDate()
-                .setText(new SimpleDateFormat("dd-MM-yyyy HH:mm:ss", Locale.GERMANY)
+                .setText(new SimpleDateFormat(helper.getContext().getString(R.string.date_format), Locale.GERMANY)
                 .format(multimediaItems.get(position).getMultimediaItem().getCreationDate()));
         List<Tag> tags = multimediaItems.get(position).getTags();
         for (int i=0;i<holder.getItemTagsChips().length;i++) {
@@ -157,7 +157,7 @@ public class MediaItemAdapter extends RecyclerView.Adapter<MediaItemAdapter.View
 
     public void removeItem(int position){
         deletedItemPosition = position;
-        deletedItem = multimediaItems.get(position);
+        deletedItem = multimediaItems.remove(position);
         helper.closeDBConnection();
         notifyItemRemoved(deletedItemPosition);
         showUndoSnackBar();
@@ -170,8 +170,8 @@ public class MediaItemAdapter extends RecyclerView.Adapter<MediaItemAdapter.View
     private void showUndoSnackBar(){
         final Snackbar snackbar = Snackbar
                 .make(helper.getView(R.id.main_activity_layout),
-                "Undo deleting item?", Snackbar.LENGTH_LONG);
-        snackbar.setAction("UNDO", view -> {
+                R.string.undo_question, Snackbar.LENGTH_LONG);
+        snackbar.setAction(R.string.undo_text, view -> {
             multimediaItems.add(deletedItemPosition, deletedItem);
             notifyItemInserted(deletedItemPosition);
         });

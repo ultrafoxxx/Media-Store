@@ -20,7 +20,7 @@ import io.reactivex.Single;
 public interface MultimediaItemDao {
 
     @Insert
-    Completable insert(MultimediaItem multimediaItem);
+    Completable insert(MultimediaItem... multimediaItems);
 
     @Update
     Completable update(MultimediaItem multimediaItem);
@@ -56,6 +56,46 @@ public interface MultimediaItemDao {
             "            ON MM.fileName=MFTS.fileName" +
             "            WHERE MultimediaItemTagCrossRefFTS MATCH :query)")
     Flowable<List<MultimediaItemsTags>> queryItemsByNamesAndTags(String query);
+
+    @Transaction
+    @Query("SELECT *" +
+            "FROM MultimediaItem M " +
+            "WHERE M.fileName IN (SELECT MM.fileName " +
+            "            FROM MultimediaItem MM JOIN MultimediaItemTagCrossRefFTS MFTS" +
+            "            ON MM.fileName=MFTS.fileName" +
+            "            WHERE MultimediaItemTagCrossRefFTS MATCH :query)" +
+            "            ORDER BY creationDate")
+    Flowable<List<MultimediaItemsTags>> queryItemsByNamesAndTagsOrderByDateAsc(String query);
+
+    @Transaction
+    @Query("SELECT *" +
+            "FROM MultimediaItem M " +
+            "WHERE M.fileName IN (SELECT MM.fileName " +
+            "            FROM MultimediaItem MM JOIN MultimediaItemTagCrossRefFTS MFTS" +
+            "            ON MM.fileName=MFTS.fileName" +
+            "            WHERE MultimediaItemTagCrossRefFTS MATCH :query)" +
+            "            ORDER BY creationDate DESC")
+    Flowable<List<MultimediaItemsTags>> queryItemsByNamesAndTagsOrderByDateDesc(String query);
+
+    @Transaction
+    @Query("SELECT *" +
+            "FROM MultimediaItem M " +
+            "WHERE M.fileName IN (SELECT MM.fileName " +
+            "            FROM MultimediaItem MM JOIN MultimediaItemTagCrossRefFTS MFTS" +
+            "            ON MM.fileName=MFTS.fileName" +
+            "            WHERE MultimediaItemTagCrossRefFTS MATCH :query)" +
+            "            ORDER BY fileName")
+    Flowable<List<MultimediaItemsTags>> queryItemsByNamesAndTagsOrderByNameAsc(String query);
+
+    @Transaction
+    @Query("SELECT *" +
+            "FROM MultimediaItem M " +
+            "WHERE M.fileName IN (SELECT MM.fileName " +
+            "            FROM MultimediaItem MM JOIN MultimediaItemTagCrossRefFTS MFTS" +
+            "            ON MM.fileName=MFTS.fileName" +
+            "            WHERE MultimediaItemTagCrossRefFTS MATCH :query)" +
+            "            ORDER BY fileName DESC")
+    Flowable<List<MultimediaItemsTags>> queryItemsByNamesAndTagsOrderByNameDesc(String query);
 
     @Query("SELECT COUNT(*) FROM MultimediaItem WHERE fileName=:fileName")
     Single<Integer> numberOfItemsWithProvidedFileName(String fileName);
